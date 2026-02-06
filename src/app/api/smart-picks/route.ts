@@ -30,6 +30,7 @@ export async function GET() {
            COUNT(*) FILTER (WHERE ws.alphaz > 0) as positive_thresholds,
            COUNT(*) as total_thresholds,
            MAX(ws.n) as max_n,
+           MAX(ws.alphaz) as best_alphaz,
            json_agg(json_build_object(
              'threshold', ws.threshold,
              'n', ws.n,
@@ -38,7 +39,7 @@ export async function GET() {
              'alphaz', ws.alphaz
            ) ORDER BY ws.threshold) as stats
          FROM wallet_stats ws
-         WHERE ws.n >= 5
+         WHERE ws.n >= 3
          GROUP BY ws.wallet
          HAVING COUNT(*) FILTER (WHERE ws.alphaz > 0) >= 1
        )
@@ -47,21 +48,21 @@ export async function GET() {
          wp.follow_score,
          wp.is_followable,
          wp.n_02,
-         wp.alphaz_02,
+         COALESCE(wp.alphaz_02, mt.best_alphaz) as alphaz_02,
          wp.hedge_rate,
          wp.late_sniping_rate,
          wp.last_trade_at,
          mt.positive_thresholds,
          mt.total_thresholds,
          mt.max_n,
+         mt.best_alphaz,
          mt.stats
        FROM wallet_profiles wp
        JOIN multi_threshold mt ON mt.wallet = wp.wallet
-       WHERE wp.hedge_rate <= 0.25
-         AND wp.late_sniping_rate <= 0.60
-         AND wp.follow_score > 0
-       ORDER BY mt.positive_thresholds DESC, wp.follow_score DESC
-       LIMIT 30`
+       WHERE wp.hedge_rate <= 0.50
+         AND wp.late_sniping_rate <= 0.80
+       ORDER BY mt.best_alphaz DESC, mt.positive_thresholds DESC
+       LIMIT 50`
     );
 
     const smartWallets = smartWalletsRes.rows.map((r: Record<string, unknown>) => ({
@@ -100,7 +101,7 @@ export async function GET() {
            JOIN markets m ON m.condition_id = t.condition_id
            WHERE t.wallet = ANY($1)
              AND t.side = 'BUY'
-             AND t.price <= 0.05
+             AND t.price <= 0.15
              AND t.price > 0
              AND t.ts >= NOW() - interval '30 days'
              AND (m.closed = false OR m.closed IS NULL)
