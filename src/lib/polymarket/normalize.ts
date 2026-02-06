@@ -10,18 +10,27 @@ import type {
 
 /* ── Normalize Market ── */
 export function normalizeMarket(raw: GammaMarketRaw): MarketNormalized | null {
+  const conditionId = raw.conditionId ?? raw.condition_id ?? "";
+  if (!conditionId) return null;
+
+  const rawOutcomes = raw.outcomes;
+  const rawClobTokenIds = raw.clobTokenIds ?? raw.clob_token_ids;
+  const endDate = raw.endDateIso ?? raw.end_date_iso ?? null;
+
   let outcomes: string[];
   let clobTokenIds: string[];
 
   try {
     outcomes =
-      typeof raw.outcomes === "string"
-        ? JSON.parse(raw.outcomes)
-        : raw.outcomes;
+      typeof rawOutcomes === "string"
+        ? JSON.parse(rawOutcomes)
+        : rawOutcomes;
     clobTokenIds =
-      typeof raw.clob_token_ids === "string"
-        ? JSON.parse(raw.clob_token_ids)
-        : raw.clob_token_ids;
+      typeof rawClobTokenIds === "string"
+        ? JSON.parse(rawClobTokenIds)
+        : Array.isArray(rawClobTokenIds)
+        ? rawClobTokenIds
+        : [];
   } catch {
     return null;
   }
@@ -36,10 +45,10 @@ export function normalizeMarket(raw: GammaMarketRaw): MarketNormalized | null {
   }
 
   return {
-    condition_id: raw.condition_id,
+    condition_id: conditionId,
     question: raw.question ?? "",
     slug: raw.slug ?? "",
-    end_date: raw.end_date_iso ?? null,
+    end_date: endDate,
     closed: !!raw.closed,
     outcomes,
     clob_token_ids: clobTokenIds,
@@ -48,14 +57,18 @@ export function normalizeMarket(raw: GammaMarketRaw): MarketNormalized | null {
 
 /* ── Normalize Trade ── */
 export function normalizeTrade(raw: DataApiTradeRaw): TradeNormalized {
-  const conditionId = raw.market ?? "";
+  const conditionId = raw.conditionId ?? raw.market ?? "";
   const wallet = raw.proxyWallet ?? "";
-  const ts = raw.timestamp ?? "";
+  // timestamp can be unix seconds (number) or ISO string
+  const rawTs = raw.timestamp ?? "";
+  const ts = /^\d+$/.test(String(rawTs))
+    ? new Date(Number(rawTs) * 1000).toISOString()
+    : String(rawTs);
   const side = raw.side ?? "";
-  const price = raw.price != null ? parseFloat(raw.price) : null;
-  const size = raw.size != null ? parseFloat(raw.size) : null;
+  const price = raw.price != null ? parseFloat(String(raw.price)) : null;
+  const size = raw.size != null ? parseFloat(String(raw.size)) : null;
   const outcomeIndex =
-    raw.outcomeIndex != null ? parseInt(raw.outcomeIndex, 10) : null;
+    raw.outcomeIndex != null ? parseInt(String(raw.outcomeIndex), 10) : null;
   const outcome = raw.outcome ?? null;
   const asset = raw.asset ?? null;
   const txHash = raw.transactionHash ?? null;

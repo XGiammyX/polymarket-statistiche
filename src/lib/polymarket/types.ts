@@ -1,28 +1,32 @@
 /* ── Raw types from Polymarket APIs ── */
 
 export interface GammaMarketRaw {
-  condition_id: string;
+  conditionId?: string;
+  condition_id?: string;
   question: string;
   slug: string;
-  end_date_iso: string;
+  endDateIso?: string;
+  end_date_iso?: string;
   closed: boolean;
   outcomes: string; // JSON stringified e.g. '["Yes","No"]'
-  clob_token_ids: string; // JSON stringified e.g. '["id1","id2"]'
+  clobTokenIds?: string; // JSON stringified e.g. '["id1","id2"]'
+  clob_token_ids?: string;
   [key: string]: unknown;
 }
 
 export interface DataApiTradeRaw {
-  id: string;
-  market: string; // conditionId
-  asset: string;
-  side: string;
-  price: string;
-  size: string;
-  timestamp: string; // unix seconds or ISO
-  proxyWallet: string;
-  outcome: string;
-  outcomeIndex: string;
-  transactionHash: string;
+  id?: string;
+  conditionId?: string; // camelCase from API
+  market?: string; // legacy alias
+  asset?: string;
+  side?: string;
+  price?: string | number;
+  size?: string | number;
+  timestamp?: string | number; // unix seconds (number) or ISO string
+  proxyWallet?: string;
+  outcome?: string;
+  outcomeIndex?: string | number;
+  transactionHash?: string;
   [key: string]: unknown;
 }
 

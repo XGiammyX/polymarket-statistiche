@@ -8,6 +8,7 @@ import {
   pickTradeBackfillBatch,
   markTradeBackfillProgress,
   markTradeBackfillError,
+  ensureMarketPlaceholder,
   query,
 } from "@/lib/db";
 import type { MarketRow, ResolutionRow, TradeRow } from "@/lib/db";
@@ -19,6 +20,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const TIME_BUDGET_MS = 25_000;
+const TRADES_RESERVE_MS = 10_000; // reserve at least 10s for trades
 
 async function syncHandler(ctx: CronContext): Promise<CronResult> {
   let statusFinal: "success" | "partial" = "success";
@@ -69,105 +71,95 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
     `[sync] rid=${ctx.requestId} markets: fetched=${marketsFetched} upserted=${marketsUpserted} offset=${newMarketsOffset}`
   );
 
-  // Time budget check
-  if (ctx.elapsed() > TIME_BUDGET_MS) {
-    statusFinal = "partial";
-    await setEtlState("last_sync_at", new Date().toISOString());
-    return {
-      status: statusFinal,
-      summary: {
-        markets: { fetched: marketsFetched, upserted: marketsUpserted, newOffset: newMarketsOffset },
-        resolutions: { attempted: 0, inserted: 0 },
-        backfillRowsCreated: 0,
-        trades: { marketsProcessed: 0, tradesInserted: 0, completedMarkets: 0 },
-        stoppedAt: "markets",
-      },
-    };
-  }
+  // Check if we have time for resolutions, otherwise skip straight to trades
+  const skipResolutions = ctx.elapsed() > (TIME_BUDGET_MS - TRADES_RESERVE_MS);
 
   /* ═══════════════════════════════════════════════════
-     B) SYNC RESOLUTIONS (CLOB) — batch 25
+     B) SYNC RESOLUTIONS (CLOB) — batch 10 (skip if time is short)
      ═══════════════════════════════════════════════════ */
   let resolutionsAttempted = 0;
   let resolutionsInserted = 0;
 
-  try {
-    const unresolvedRes = await query(
-      `SELECT m.condition_id, m.clob_token_ids
-       FROM markets m
-       WHERE m.closed = true
-         AND NOT EXISTS (
-           SELECT 1 FROM resolutions r WHERE r.condition_id = m.condition_id
-         )
-       ORDER BY m.end_date DESC NULLS LAST
-       LIMIT 25`
-    );
+  if (!skipResolutions) {
+    try {
+      const unresolvedRes = await query(
+        `SELECT m.condition_id, m.clob_token_ids
+         FROM markets m
+         WHERE m.closed = true
+           AND NOT EXISTS (
+             SELECT 1 FROM resolutions r WHERE r.condition_id = m.condition_id
+           )
+         ORDER BY m.end_date DESC NULLS LAST
+         LIMIT 15`
+      );
 
-    const unresolvedMarkets = unresolvedRes.rows as Array<{
-      condition_id: string;
-      clob_token_ids: unknown;
-    }>;
+      const unresolvedMarkets = unresolvedRes.rows as Array<{
+        condition_id: string;
+        clob_token_ids: unknown;
+      }>;
 
-    resolutionsAttempted = unresolvedMarkets.length;
+      resolutionsAttempted = unresolvedMarkets.length;
 
-    for (const um of unresolvedMarkets) {
-      if (ctx.elapsed() > TIME_BUDGET_MS) {
-        statusFinal = "partial";
-        break;
-      }
-      try {
-        let tokenIds: string[] = [];
+      for (const um of unresolvedMarkets) {
+        if (ctx.elapsed() > (TIME_BUDGET_MS - TRADES_RESERVE_MS)) {
+          statusFinal = "partial";
+          break;
+        }
         try {
-          const raw = um.clob_token_ids;
-          tokenIds =
-            typeof raw === "string" ? JSON.parse(raw) : Array.isArray(raw) ? raw : [];
-        } catch {
-          tokenIds = [];
-        }
+          let tokenIds: string[] = [];
+          try {
+            const raw = um.clob_token_ids;
+            tokenIds =
+              typeof raw === "string" ? JSON.parse(raw) : Array.isArray(raw) ? raw : [];
+          } catch {
+            tokenIds = [];
+          }
 
-        const winner = await fetchMarketWinner(um.condition_id, tokenIds);
+          const winner = await fetchMarketWinner(um.condition_id, tokenIds);
 
-        if (winner && winner.winning_token_id) {
-          const row: ResolutionRow = {
-            condition_id: winner.condition_id,
-            winning_token_id: winner.winning_token_id,
-            winning_outcome_index: winner.winning_outcome_index,
-          };
-          await upsertResolution(row);
-          resolutionsInserted++;
+          if (winner && winner.winning_token_id) {
+            const row: ResolutionRow = {
+              condition_id: winner.condition_id,
+              winning_token_id: winner.winning_token_id,
+              winning_outcome_index: winner.winning_outcome_index,
+            };
+            await upsertResolution(row);
+            resolutionsInserted++;
+          } else {
+            // Market exists on CLOB but no winner yet, or returned null — mark with empty resolution
+            // so we don't retry endlessly (especially for old 404 markets)
+            await upsertResolution({
+              condition_id: um.condition_id,
+              winning_token_id: null,
+              winning_outcome_index: null,
+            });
+          }
+        } catch (err) {
+          // 404 or other CLOB error — mark as unresolvable so we skip it next time
+          await upsertResolution({
+            condition_id: um.condition_id,
+            winning_token_id: null,
+            winning_outcome_index: null,
+          }).catch(() => {});
+          console.warn(
+            `[sync] resolution error for ${um.condition_id}: ${
+              err instanceof Error ? err.message : err
+            }`
+          );
         }
-      } catch (err) {
-        console.warn(
-          `[sync] resolution error for ${um.condition_id}: ${
-            err instanceof Error ? err.message : err
-          }`
-        );
       }
+    } catch (err) {
+      console.error(
+        `[sync] resolutions query error: ${err instanceof Error ? err.message : err}`
+      );
     }
-  } catch (err) {
-    console.error(
-      `[sync] resolutions query error: ${err instanceof Error ? err.message : err}`
-    );
+  } else {
+    console.log(`[sync] rid=${ctx.requestId} skipping resolutions — reserving time for trades`);
   }
 
   console.log(
     `[sync] rid=${ctx.requestId} resolutions: attempted=${resolutionsAttempted} inserted=${resolutionsInserted}`
   );
-
-  if (ctx.elapsed() > TIME_BUDGET_MS) {
-    statusFinal = "partial";
-    await setEtlState("last_sync_at", new Date().toISOString());
-    return {
-      status: statusFinal,
-      summary: {
-        markets: { fetched: marketsFetched, upserted: marketsUpserted, newOffset: newMarketsOffset },
-        resolutions: { attempted: resolutionsAttempted, inserted: resolutionsInserted },
-        backfillRowsCreated: 0,
-        trades: { marketsProcessed: 0, tradesInserted: 0, completedMarkets: 0 },
-        stoppedAt: "resolutions",
-      },
-    };
-  }
 
   /* ═══════════════════════════════════════════════════
      C) PREPARE TRADE_BACKFILL (DB only)
@@ -190,7 +182,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
   let tradesCompleted = 0;
 
   try {
-    const batch = await pickTradeBackfillBatch(5);
+    const batch = await pickTradeBackfillBatch(10);
 
     for (const item of batch) {
       if (ctx.elapsed() > TIME_BUDGET_MS) {
@@ -198,6 +190,9 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
         break;
       }
       try {
+        // Ensure market exists (FK safety)
+        await ensureMarketPlaceholder(item.condition_id);
+
         const result = await fetchTradesPage({
           conditionId: item.condition_id,
           limit: 500,
@@ -218,6 +213,12 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
           asset: t.asset,
           tx_hash: t.tx_hash,
         }));
+
+        // Ensure FK for all unique condition_ids in batch
+        const uniqueCids = [...new Set(tradeRows.map((t) => t.condition_id))];
+        for (const cid of uniqueCids) {
+          await ensureMarketPlaceholder(cid);
+        }
 
         const inserted = await insertTrades(tradeRows);
         totalTradesInserted += inserted;
