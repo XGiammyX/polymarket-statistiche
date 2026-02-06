@@ -21,6 +21,9 @@ export default function DocsPage() {
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">Indice</h2>
           <ol className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-sm">
             {[
+              { id: "come-usare", label: "★ Come sfruttare i dati" },
+              { id: "workflow", label: "★ Workflow pratico passo-passo" },
+              { id: "leggere-tabella", label: "★ Come leggere la tabella" },
               { id: "idea", label: "1. L'idea di base" },
               { id: "pipeline", label: "2. Pipeline dati (ETL)" },
               { id: "alpha", label: "3. Alpha-Z: il cuore statistico" },
@@ -43,6 +46,243 @@ export default function DocsPage() {
 
         {/* Sections */}
         <div className="space-y-12 text-sm leading-relaxed text-gray-300">
+
+          {/* ★ Come sfruttare i dati */}
+          <section id="come-usare">
+            <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+              <span className="text-yellow-400">★</span> Come sfruttare i dati per scommettere
+            </h2>
+            <p className="mb-4">
+              Questa piattaforma identifica wallet che hanno un <strong className="text-white">vantaggio informativo dimostrabile</strong> su
+              Polymarket. Ecco come puoi usarla concretamente:
+            </p>
+
+            <div className="space-y-4">
+              <div className="bg-blue-950/30 border border-blue-800/50 rounded-lg p-4">
+                <h3 className="text-blue-400 font-semibold mb-2">Strategia 1: Copy-trading dai Segnali Live</h3>
+                <p className="text-gray-400 text-xs mb-2">
+                  Vai alla pagina <strong className="text-white">Segnali</strong> e cerca trade recenti di wallet followable.
+                  Se un wallet con Alpha-Z &gt; 2 ha appena comprato un token a $0.01, quel mercato potrebbe
+                  avere una probabilità reale più alta di quello che il mercato crede.
+                </p>
+                <div className="bg-gray-900/60 rounded p-3 text-xs text-gray-500 mt-2">
+                  <strong className="text-gray-300">Esempio concreto:</strong> Wallet 0xca85... (αZ +2.55 a soglia 1%) compra
+                  &quot;Solana Up or Down&quot; a $0.01 (il mercato dice 1% di probabilità). Se vince, il payout è $1 per
+                  token — rendimento 100x. Il fatto che questo wallet abbia storicamente vinto più del caso
+                  suggerisce che potrebbe avere un edge anche su questo trade.
+                </div>
+              </div>
+
+              <div className="bg-purple-950/30 border border-purple-800/50 rounded-lg p-4">
+                <h3 className="text-purple-400 font-semibold mb-2">Strategia 2: Monitorare le Posizioni Aperte</h3>
+                <p className="text-gray-400 text-xs mb-2">
+                  La pagina <strong className="text-white">Posizioni</strong> mostra dove i wallet migliori hanno ancora shares in mano.
+                  Se un wallet followable ha una posizione aperta su un mercato, significa che <strong className="text-white">non ha ancora venduto</strong> —
+                  crede ancora nell&apos;esito. Puoi comprare lo stesso token finché il prezzo è ancora basso.
+                </p>
+                <div className="bg-gray-900/60 rounded p-3 text-xs text-gray-500 mt-2">
+                  <strong className="text-gray-300">Quando NON copiare:</strong> Se il prezzo corrente è già salito molto
+                  rispetto all&apos;entry price del wallet, il rischio/rendimento potrebbe non essere più conveniente.
+                  Cerca segnali dove il prezzo è ancora vicino all&apos;entry.
+                </div>
+              </div>
+
+              <div className="bg-green-950/30 border border-green-800/50 rounded-lg p-4">
+                <h3 className="text-green-400 font-semibold mb-2">Strategia 3: Analisi del Wallet Detail</h3>
+                <p className="text-gray-400 text-xs mb-2">
+                  Clicca su un wallet nella leaderboard per vedere il suo profilo completo. Controlla:
+                </p>
+                <ul className="text-xs text-gray-400 space-y-1 ml-3">
+                  <li>→ <strong className="text-white">Stats a 3 soglie</strong>: se αZ è alto a tutte le soglie (5%, 2%, 1%), l&apos;edge è robusto</li>
+                  <li>→ <strong className="text-white">Upset Wins</strong>: i mercati specifici dove ha vinto — ti dice in che tipo di mercati è bravo</li>
+                  <li>→ <strong className="text-white">Trade recenti</strong>: cosa sta comprando ORA, anche su mercati non ancora risolti</li>
+                  <li>→ <strong className="text-white">Hedge Rate = 0%</strong>: il wallet non copre mai → le sue scommesse sono genuine</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* ★ Workflow pratico */}
+          <section id="workflow">
+            <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+              <span className="text-yellow-400">★</span> Workflow pratico passo-passo
+            </h2>
+
+            <div className="space-y-3">
+              {[
+                {
+                  num: "1",
+                  title: "Apri la Leaderboard",
+                  desc: "Imposta Soglia ≤2%, Min N = 5+, ordina per Score. Cerca wallet con Win% verde (sopra E[W%]) e ROI positivo.",
+                  color: "text-blue-400",
+                },
+                {
+                  num: "2",
+                  title: "Analizza i top wallet",
+                  desc: "Clicca sul wallet per vedere il dettaglio. Controlla che αZ sia positivo a più soglie e che Hedge Rate sia 0%. Guarda gli Upset Wins per capire su che mercati è forte.",
+                  color: "text-blue-400",
+                },
+                {
+                  num: "3",
+                  title: "Controlla i Segnali Live",
+                  desc: "Vai in Segnali e filtra per 'Solo Followable'. Cerca trade con entry price basso su mercati che ti interessano. Clicca 'Polymarket ↗' per andare direttamente al mercato.",
+                  color: "text-blue-400",
+                },
+                {
+                  num: "4",
+                  title: "Valuta il rischio/rendimento",
+                  desc: "Entry a $0.02 = rischi $0.02 per token, guadagni $0.98 se vince. Ma la probabilità reale è bassa. Usa una size piccola (1-5% del bankroll) per ogni scommessa copiata.",
+                  color: "text-yellow-400",
+                },
+                {
+                  num: "5",
+                  title: "Diversifica",
+                  desc: "Non copiare un solo wallet o un solo mercato. Segui più wallet followable su più mercati diversi. La forza statistica viene dal volume.",
+                  color: "text-yellow-400",
+                },
+                {
+                  num: "6",
+                  title: "Monitora le Posizioni",
+                  desc: "Tieni d'occhio la pagina Posizioni. Se un wallet vende le sue shares (posizione scompare), potrebbe essere un segnale per uscire anche tu.",
+                  color: "text-green-400",
+                },
+              ].map((s) => (
+                <div key={s.num} className="flex gap-3 bg-gray-900/60 rounded-lg p-4 border border-gray-800">
+                  <div className={`flex-shrink-0 w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center font-bold text-sm ${s.color}`}>
+                    {s.num}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white text-sm">{s.title}</h3>
+                    <p className="text-gray-400 text-xs mt-1">{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 bg-yellow-950/30 border border-yellow-800/50 rounded-lg p-4">
+              <h3 className="text-yellow-400 font-semibold text-sm mb-1">Regola d&apos;oro del bankroll</h3>
+              <p className="text-gray-400 text-xs">
+                Le scommesse low-prob vincono raramente ma pagano molto. Non mettere mai più dell&apos;1-2%
+                del tuo bankroll su una singola scommessa copiata. Su 50 trade a $0.02, ne vincerai forse 1-3,
+                ma ognuno paga 50x. Il profitto viene dalla <strong className="text-white">legge dei grandi numeri</strong>.
+              </p>
+            </div>
+          </section>
+
+          {/* ★ Come leggere la tabella */}
+          <section id="leggere-tabella">
+            <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+              <span className="text-yellow-400">★</span> Come leggere la tabella — riga per riga
+            </h2>
+            <p className="mb-4">
+              Ecco come interpretare una riga della leaderboard per decidere se seguire un wallet:
+            </p>
+
+            <div className="bg-gray-900/80 border border-gray-800 rounded-lg p-5 mb-4">
+              <p className="text-gray-400 text-xs mb-3">Esempio di riga:</p>
+              <div className="overflow-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-gray-500 border-b border-gray-700">
+                      <th className="py-1 px-2 text-left">Wallet</th>
+                      <th className="py-1 px-2 text-right">Score</th>
+                      <th className="py-1 px-2 text-right">N/W</th>
+                      <th className="py-1 px-2 text-right">Win%</th>
+                      <th className="py-1 px-2 text-right">E[W%]</th>
+                      <th className="py-1 px-2 text-right">αZ</th>
+                      <th className="py-1 px-2 text-right">ROI</th>
+                      <th className="py-1 px-2 text-right">H/L%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-green-950/20">
+                      <td className="py-1.5 px-2 font-mono text-blue-400">0xca85…bf2 ✓</td>
+                      <td className="py-1.5 px-2 text-right font-bold text-blue-400">0.7</td>
+                      <td className="py-1.5 px-2 text-right">31/<span className="text-green-400 font-bold">1</span></td>
+                      <td className="py-1.5 px-2 text-right text-green-400 font-bold">3.2%</td>
+                      <td className="py-1.5 px-2 text-right text-gray-600">1.6%</td>
+                      <td className="py-1.5 px-2 text-right text-green-400 font-bold">+0.7</td>
+                      <td className="py-1.5 px-2 text-right text-green-400 font-bold">+100%</td>
+                      <td className="py-1.5 px-2 text-right text-gray-600">0/0</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="bg-gray-900/60 rounded p-3 border border-gray-800">
+                <strong className="text-white text-sm">N/W = 31/1</strong>
+                <p className="text-gray-400 text-xs mt-1">
+                  Ha fatto 31 trade a bassa probabilità (≤2%). Di questi, 1 ha vinto.
+                  Sembra poco? Con prezzi medi di ~1.6%, statisticamente ci aspetteremmo ~0.5 vittorie.
+                  Ne ha avuta 1 — il doppio del previsto.
+                </p>
+              </div>
+              <div className="bg-gray-900/60 rounded p-3 border border-gray-800">
+                <strong className="text-green-400 text-sm">Win% = 3.2% vs E[W%] = 1.6%</strong>
+                <p className="text-gray-400 text-xs mt-1">
+                  Win% è la percentuale di vittorie reali (1/31 = 3.2%).
+                  E[W%] è quello che il caso prevederebbe (1.6%).
+                  <strong className="text-white"> Win% &gt; E[W%]</strong> → questo wallet vince il doppio del caso. Se Win% è <strong className="text-green-400">verde</strong>, c&apos;è un edge.
+                </p>
+              </div>
+              <div className="bg-gray-900/60 rounded p-3 border border-gray-800">
+                <strong className="text-green-400 text-sm">αZ = +0.7</strong>
+                <p className="text-gray-400 text-xs mt-1">
+                  Positivo = sopra la media. Ma &lt;2, quindi potrebbe essere fortuna con solo 31 trade.
+                  Con più campione, se il pattern continua, αZ crescerà e diventerà statisticamente significativo.
+                  <strong className="text-white"> αZ &gt; 2 = meno del 2.3% di probabilità che sia caso.</strong>
+                </p>
+              </div>
+              <div className="bg-gray-900/60 rounded p-3 border border-gray-800">
+                <strong className="text-green-400 text-sm">ROI = +100%</strong>
+                <p className="text-gray-400 text-xs mt-1">
+                  Se avessi investito $1 per ogni trade di questo wallet, avresti speso in totale ~$0.50
+                  (somma dei prezzi dei 31 token) e incassato $1.00 (la vittoria). Rendimento netto: +100%.
+                  <strong className="text-white"> ROI positivo = profitto reale.</strong> ROI negativo = perdita.
+                </p>
+              </div>
+              <div className="bg-gray-900/60 rounded p-3 border border-gray-800">
+                <strong className="text-white text-sm">H/L% = 0/0</strong>
+                <p className="text-gray-400 text-xs mt-1">
+                  Hedge 0% = non copre mai le scommesse (buono, segnale genuino).
+                  Late 0% = non fa sniping last-minute (buono, non sfrutta info pubblica dell&apos;ultimo minuto).
+                  <strong className="text-white"> Valori bassi = wallet più affidabile.</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 bg-green-950/30 border border-green-800/50 rounded-lg p-4">
+              <h3 className="text-green-400 font-semibold text-sm mb-2">Checklist rapida: quando copiare un wallet?</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-400">
+                <div className="flex items-start gap-2">
+                  <span className="text-green-400 flex-shrink-0 mt-0.5">✓</span>
+                  <span><strong className="text-white">Win% verde</strong> (sopra E[W%])</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-green-400 flex-shrink-0 mt-0.5">✓</span>
+                  <span><strong className="text-white">αZ &gt; 0</strong> (idealmente &gt;2)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-green-400 flex-shrink-0 mt-0.5">✓</span>
+                  <span><strong className="text-white">ROI positivo</strong></span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-green-400 flex-shrink-0 mt-0.5">✓</span>
+                  <span><strong className="text-white">Hedge/Late bassi</strong> (0-25%)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-green-400 flex-shrink-0 mt-0.5">✓</span>
+                  <span><strong className="text-white">N ≥ 10+</strong> (campione minimo)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-green-400 flex-shrink-0 mt-0.5">✓</span>
+                  <span><strong className="text-white">Ultimo trade recente</strong> (wallet ancora attivo)</span>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* 1 */}
           <section id="idea">

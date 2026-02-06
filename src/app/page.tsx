@@ -105,18 +105,32 @@ export default function Home() {
 
         {/* Collapsible help */}
         {showHelp && (
-          <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-500 animate-in">
-            <div className="bg-gray-900/60 rounded p-2.5">
-              <strong className="text-gray-300">Win Rate</strong> — Percentuale di vittorie sui trade fatti. Un wallet che compra a 2% e vince il 5% delle volte ha un edge reale.
+          <div className="mb-4 bg-gray-900/60 rounded-lg p-4 border border-gray-800">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-500 mb-3">
+              <div className="rounded p-2 bg-gray-800/50">
+                <strong className="text-gray-300">Win%</strong> — % vittorie reali. <span className="text-green-400">Verde</span> se sopra E[W%] = il wallet ha un edge.
+              </div>
+              <div className="rounded p-2 bg-gray-800/50">
+                <strong className="text-gray-300">αZ</strong> — Z-score. <span className="text-green-400">&gt;2 = statisticamente significativo</span>. Misura quanto è improbabile che sia caso.
+              </div>
+              <div className="rounded p-2 bg-gray-800/50">
+                <strong className="text-gray-300">ROI</strong> — Se copiavi ogni trade: <span className="text-green-400">+100%</span> = hai raddoppiato. Basato su payout reali.
+              </div>
+              <div className="rounded p-2 bg-gray-800/50">
+                <strong className="text-gray-300">H/L%</strong> — Hedge/Late rate. <strong className="text-white">0/0 = ideale</strong>. Valori alti = segnale meno affidabile.
+              </div>
             </div>
-            <div className="bg-gray-900/60 rounded p-2.5">
-              <strong className="text-gray-300">Alpha-Z</strong> — Quante deviazioni standard sopra il caso. &gt;2 = statisticamente significativo. Verde = edge, rosso = sotto la media.
-            </div>
-            <div className="bg-gray-900/60 rounded p-2.5">
-              <strong className="text-gray-300">ROI</strong> — Rendimento simulato: se avessi messo $1 per ogni trade del wallet, quanto avresti guadagnato/perso.
-            </div>
-            <div className="bg-gray-900/60 rounded p-2.5">
-              <strong className="text-gray-300">Followable ✓</strong> — Wallet con N≥20, Alpha-Z&gt;0, Hedge≤25%, Late≤60%. Affidabile da copiare.
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-gray-500">Cerca:</span>
+              <span className="text-green-400">Win% verde</span>
+              <span className="text-gray-600">+</span>
+              <span className="text-green-400">αZ &gt; 0</span>
+              <span className="text-gray-600">+</span>
+              <span className="text-green-400">ROI positivo</span>
+              <span className="text-gray-600">+</span>
+              <span className="text-white">H/L bassi</span>
+              <span className="text-gray-600">→</span>
+              <Link href="/docs#come-usare" className="text-blue-400 hover:underline font-medium">Guida completa →</Link>
             </div>
           </div>
         )}
