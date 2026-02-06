@@ -232,34 +232,38 @@ export async function GET() {
       pick.potentialReturn = pick.avgEntryPrice > 0 ? (1 / pick.avgEntryPrice - 1) * 100 : 0;
 
       // Convergence: more unique wallets on same bet = stronger signal
-      // Score = wallets × avg_positive_thresholds × avg_alphaz
       const avgPosThresholds = pick.trades.reduce((s, t) => s + t.positiveThresholds, 0) / pick.trades.length;
       pick.convergenceScore = pick.walletCount * avgPosThresholds * Math.max(pick.avgAlphaZ, 0.1);
 
-      // Expected Value: estimated real probability based on wallet historical win rates
-      // If wallet has αZ > 0, their actual win rate is higher than market price
-      // EV = (estimated_prob × payout) - (1 - estimated_prob) × cost
-      // Simplified: if avg wallet wins at 2× the market rate → prob ≈ 2 × price
+      // Expected Value: estimated real probability based on wallet edge
       const impliedProb = pick.avgEntryPrice;
-      const edgeMultiplier = 1 + Math.max(pick.avgAlphaZ * 0.3, 0); // αZ = 1 → 30% more likely than market
-      const estimatedProb = Math.min(impliedProb * edgeMultiplier, 0.5); // cap at 50%
+      const edgeMultiplier = 1 + Math.max(pick.avgAlphaZ * 0.3, 0);
+      const estimatedProb = Math.min(impliedProb * edgeMultiplier, 0.5);
       pick.expectedValue = estimatedProb * (1 - pick.avgEntryPrice) - (1 - estimatedProb) * pick.avgEntryPrice;
 
-      // Confidence
-      if (pick.followableCount > 0 && pick.avgAlphaZ > 1 && pick.walletCount >= 2) {
+      // Confidence: multi-factor scoring
+      // Points: walletCount (0-3), maxAlphaZ (0-3), followable (0-2), volume (0-1), freshness (0-1)
+      let confPoints = 0;
+      confPoints += Math.min(pick.walletCount, 3);                          // up to 3 pts for convergence
+      confPoints += Math.min(pick.maxAlphaZ, 3);                            // up to 3 pts for best αZ
+      confPoints += pick.followableCount > 0 ? 2 : 0;                      // 2 pts for verified wallet
+      confPoints += pick.totalVolume > 100 ? 1 : 0;                        // 1 pt for significant volume
+      const tradeAge = (Date.now() - new Date(pick.latestTrade).getTime()) / (1000 * 60 * 60 * 24);
+      confPoints += tradeAge < 7 ? 1 : 0;                                  // 1 pt for fresh (< 7 days)
+
+      if (confPoints >= 6) {
         pick.confidence = "ALTA";
-      } else if (pick.avgAlphaZ > 0 && (pick.walletCount >= 2 || pick.followableCount > 0)) {
+      } else if (confPoints >= 3.5) {
         pick.confidence = "MEDIA";
       } else {
         pick.confidence = "BASSA";
       }
 
-      // Suggested size: Kelly-inspired, very conservative
-      // Full Kelly = edge / odds, we use 1/4 Kelly for safety
+      // Suggested size: Kelly-inspired, very conservative (1/4 Kelly)
       const odds = 1 / pick.avgEntryPrice - 1;
       const edge = estimatedProb - impliedProb;
       const kellyFraction = edge > 0 && odds > 0 ? (edge / (1 / odds)) : 0;
-      pick.suggestedSizePercent = Math.min(Math.max(kellyFraction * 25, 0.5), 3); // 0.5% to 3% max
+      pick.suggestedSizePercent = Math.min(Math.max(kellyFraction * 25, 0.5), 3);
 
       picks.push(pick);
     }
