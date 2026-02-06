@@ -17,7 +17,7 @@ interface LeaderboardItem {
 
 interface HealthData {
   counts: { markets: number; resolutions: number; trades: number };
-  backlog: number;
+  backlog: { pending: number; coolingDown: number };
   lastComputeAt: string | null;
 }
 
@@ -107,7 +107,7 @@ export default function Home() {
               Trades: <strong className="text-gray-300">{health.counts.trades.toLocaleString()}</strong>
             </span>
             <span>
-              Backlog: <strong className="text-gray-300">{health.backlog}</strong>
+              Backlog: <strong className="text-gray-300">{health.backlog.pending}</strong>
             </span>
             {health.lastComputeAt && (
               <span>
