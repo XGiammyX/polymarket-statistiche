@@ -23,6 +23,13 @@ interface HealthData {
   lastComputeAt: string | null;
 }
 
+function daysAgo(iso: string): string {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (d === 0) return "oggi";
+  if (d === 1) return "ieri";
+  return `${d}g fa`;
+}
+
 export default function Home() {
   const [threshold, setThreshold] = useState("0.02");
   const [minN, setMinN] = useState("1");
@@ -33,6 +40,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
@@ -57,9 +65,7 @@ export default function Home() {
     }
   }, [threshold, minN, sort, onlyFollowable]);
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [fetchLeaderboard]);
+  useEffect(() => { fetchLeaderboard(); }, [fetchLeaderboard]);
 
   useEffect(() => {
     fetch("/api/health")
@@ -72,100 +78,83 @@ export default function Home() {
     <div className="min-h-screen bg-gray-950 text-gray-100">
       <Navbar />
       <main className="max-w-7xl mx-auto px-6 py-6">
-        {/* Page description */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold mb-1">Leaderboard</h2>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            Classifica dei wallet che piazzano scommesse a bassa probabilità su Polymarket
-            e vincono più spesso del previsto. Il sistema analizza migliaia di trade e identifica
-            chi ha un vantaggio statistico reale.
-          </p>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">
-            <div className="bg-gray-900/60 rounded p-2.5">
-              <strong className="text-gray-300">Follow Score</strong> — Punteggio composito che combina
-              Alpha-Z, numero di trade, basso hedge rate e bassa late-sniping rate.
-              Più alto = wallet più affidabile da seguire.
-            </div>
-            <div className="bg-gray-900/60 rounded p-2.5">
-              <strong className="text-gray-300">Alpha-Z</strong> — Deviazione standard delle vittorie
-              rispetto al valore atteso. Un valore &gt; 2 indica che il wallet vince
-              significativamente più del caso.
-            </div>
-            <div className="bg-gray-900/60 rounded p-2.5">
-              <strong className="text-gray-300">Hedge%</strong> — Percentuale di mercati dove il wallet
-              scommette su entrambi i lati (copre il rischio). Un valore basso è migliore.
-            </div>
-            <div className="bg-gray-900/60 rounded p-2.5">
-              <strong className="text-gray-300">Late%</strong> — Percentuale di trade piazzati nell&apos;ultimo
-              giorno prima della chiusura (sniping). Un valore basso è migliore.
-            </div>
+        {/* Header compact */}
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold">Leaderboard</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Wallet che vincono scommesse improbabili su Polymarket.
+              {" "}<button onClick={() => setShowHelp(!showHelp)} className="text-blue-400 hover:underline">
+                {showHelp ? "Nascondi guida" : "Come funziona?"}
+              </button>
+            </p>
           </div>
+          {health && (
+            <div className="flex gap-2 flex-shrink-0">
+              {[
+                { label: "Mercati", value: health.counts.markets.toLocaleString() },
+                { label: "Trade", value: health.counts.trades.toLocaleString() },
+              ].map((s) => (
+                <span key={s.label} className="bg-gray-900 rounded px-2.5 py-1 text-[10px] text-gray-400">
+                  {s.label} <strong className="text-gray-200">{s.value}</strong>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Health summary */}
-        {health && (
-          <div className="flex flex-wrap gap-3 mb-5">
-            {[
-              { label: "Markets", value: health.counts.markets },
-              { label: "Resolutions", value: health.counts.resolutions },
-              { label: "Trades", value: health.counts.trades.toLocaleString() },
-              { label: "Backlog", value: health.backlog.pending },
-            ].map((s) => (
-              <span key={s.label} className="bg-gray-900 rounded-md px-3 py-1.5 text-xs text-gray-400">
-                {s.label}: <strong className="text-gray-200">{s.value}</strong>
-              </span>
-            ))}
-            {health.lastComputeAt && (
-              <span className="bg-gray-900 rounded-md px-3 py-1.5 text-xs text-gray-400">
-                Ultimo compute: <strong className="text-gray-200">{new Date(health.lastComputeAt).toLocaleString()}</strong>
-              </span>
-            )}
+        {/* Collapsible help */}
+        {showHelp && (
+          <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-500 animate-in">
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Win Rate</strong> — Percentuale di vittorie sui trade fatti. Un wallet che compra a 2% e vince il 5% delle volte ha un edge reale.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Alpha-Z</strong> — Quante deviazioni standard sopra il caso. &gt;2 = statisticamente significativo. Verde = edge, rosso = sotto la media.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">ROI</strong> — Rendimento simulato: se avessi messo $1 per ogni trade del wallet, quanto avresti guadagnato/perso.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Followable ✓</strong> — Wallet con N≥20, Alpha-Z&gt;0, Hedge≤25%, Late≤60%. Affidabile da copiare.
+            </div>
           </div>
         )}
 
-        {/* Filters */}
-        <div className="mb-5 bg-gray-900/50 rounded-lg p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <label className="flex flex-col text-sm">
-              <span className="text-gray-400 mb-1">Soglia prezzo</span>
-              <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={threshold} onChange={(e) => setThreshold(e.target.value)}>
-                <option value="0.05">≤ 0.05 (5%)</option>
-                <option value="0.02">≤ 0.02 (2%)</option>
-                <option value="0.01">≤ 0.01 (1%)</option>
-              </select>
-              <span className="text-[10px] text-gray-600 mt-1">Considera solo trade sotto questa probabilità implicita</span>
-            </label>
-            <label className="flex flex-col text-sm">
-              <span className="text-gray-400 mb-1">Trade minimi</span>
-              <input className="bg-gray-800 rounded px-3 py-1.5 w-full text-sm" type="number" min="1" value={minN} onChange={(e) => setMinN(e.target.value)} />
-              <span className="text-[10px] text-gray-600 mt-1">Quanti trade low-prob servono per entrare in classifica</span>
-            </label>
-            <label className="flex flex-col text-sm">
-              <span className="text-gray-400 mb-1">Ordina per</span>
-              <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={sort} onChange={(e) => setSort(e.target.value)}>
-                <option value="followScore">Follow Score</option>
-                <option value="alphaz">Alpha Z</option>
-                <option value="wins">Vittorie</option>
-                <option value="n">N° trade</option>
-              </select>
-              <span className="text-[10px] text-gray-600 mt-1">Metrica usata per ordinare la classifica</span>
-            </label>
-            <label className="flex flex-col text-sm justify-between">
-              <span className="text-gray-400 mb-1">Filtro qualità</span>
-              <div className="flex items-center gap-2 bg-gray-800 rounded px-3 py-1.5">
-                <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
-                <span className="text-gray-300 text-sm">Solo Followable</span>
-              </div>
-              <span className="text-[10px] text-gray-600 mt-1">Mostra solo wallet con N≥20, AlphaZ&gt;0, Hedge≤25%</span>
-            </label>
-          </div>
+        {/* Filters — compact single row */}
+        <div className="mb-4 flex flex-wrap gap-3 items-center bg-gray-900/40 rounded-lg px-4 py-2.5">
+          <label className="flex items-center gap-1.5 text-xs">
+            <span className="text-gray-500">Soglia</span>
+            <select className="bg-gray-800 rounded px-2 py-1 text-xs" value={threshold} onChange={(e) => setThreshold(e.target.value)}>
+              <option value="0.05">≤5%</option>
+              <option value="0.02">≤2%</option>
+              <option value="0.01">≤1%</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-1.5 text-xs">
+            <span className="text-gray-500">Min N</span>
+            <input className="bg-gray-800 rounded px-2 py-1 w-14 text-xs" type="number" min="1" value={minN} onChange={(e) => setMinN(e.target.value)} />
+          </label>
+          <label className="flex items-center gap-1.5 text-xs">
+            <span className="text-gray-500">Ordina</span>
+            <select className="bg-gray-800 rounded px-2 py-1 text-xs" value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="followScore">Score</option>
+              <option value="alphaz">Alpha-Z</option>
+              <option value="wins">Wins</option>
+              <option value="n">N trade</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+            <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
+            <span className="text-gray-400">Solo Followable</span>
+          </label>
+          <div className="flex-1" />
+          {updatedAt && (
+            <span className="text-[10px] text-gray-600">
+              Aggiornato: {new Date(updatedAt).toLocaleString()} — {items.length} risultati
+            </span>
+          )}
         </div>
-
-        {updatedAt && (
-          <p className="text-xs text-gray-600 mb-3">
-            Ultimo aggiornamento: {new Date(updatedAt).toLocaleString()} — {items.length} risultati
-          </p>
-        )}
 
         {error && (
           <div className="bg-red-950 border border-red-800 text-red-300 rounded p-3 text-sm mb-4">{error}</div>
@@ -178,50 +167,84 @@ export default function Home() {
         ) : items.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-sm">Nessun wallet trovato con questi filtri.</p>
-            <p className="text-gray-600 text-xs mt-1">Prova ad abbassare il valore di &quot;Min N&quot; o vai al pannello admin per eseguire sync + compute.</p>
+            <p className="text-gray-600 text-xs mt-1">Prova ad abbassare &quot;Min N&quot; o vai in <Link href="/admin" className="text-blue-400 hover:underline">Admin</Link> per sync + compute.</p>
           </div>
         ) : (
           <div className="overflow-auto rounded-lg border border-gray-800">
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-left text-gray-400 bg-gray-900/80 border-b border-gray-800">
-                  <th className="py-2.5 px-3">#</th>
-                  <th className="py-2.5 px-3">Wallet</th>
-                  <th className="py-2.5 px-3 text-right">Follow Score</th>
-                  <th className="py-2.5 px-3 text-center">Followable</th>
-                  <th className="py-2.5 px-3 text-right">N</th>
-                  <th className="py-2.5 px-3 text-right">Wins</th>
-                  <th className="py-2.5 px-3 text-right">E[Wins]</th>
-                  <th className="py-2.5 px-3 text-right">AlphaZ</th>
-                  <th className="py-2.5 px-3 text-right">Hedge%</th>
-                  <th className="py-2.5 px-3 text-right">Late%</th>
-                  <th className="py-2.5 px-3">Last Trade</th>
+                  <th className="py-2 px-2.5">#</th>
+                  <th className="py-2 px-2.5">Wallet</th>
+                  <th className="py-2 px-2.5 text-right" title="Punteggio composito 0-100">Score</th>
+                  <th className="py-2 px-2.5 text-right" title="Trade analizzati / Vittorie">N/W</th>
+                  <th className="py-2 px-2.5 text-right" title="Percentuale vittorie effettive">Win%</th>
+                  <th className="py-2 px-2.5 text-right" title="Win% atteso dal caso">E[W%]</th>
+                  <th className="py-2 px-2.5 text-right" title="Z-score: deviazioni standard sopra il caso">αZ</th>
+                  <th className="py-2 px-2.5 text-right" title="ROI simulato: profitto per $1 investito per trade">ROI</th>
+                  <th className="py-2 px-2.5 text-right" title="Hedge rate + Late sniping rate">H/L%</th>
+                  <th className="py-2 px-2.5" title="Ultimo trade low-prob">Ultimo</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, i) => (
-                  <tr key={item.wallet} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                    <td className="py-2 px-3 text-gray-600">{i + 1}</td>
-                    <td className="py-2 px-3 font-mono">
-                      <Link href={`/wallet/${item.wallet}`} className="text-blue-400 hover:underline">
-                        {item.wallet.slice(0, 6)}...{item.wallet.slice(-4)}
-                      </Link>
-                    </td>
-                    <td className="py-2 px-3 text-right font-semibold text-blue-400">{Number(item.followScore).toFixed(1)}</td>
-                    <td className="py-2 px-3 text-center">
-                      {item.isFollowable ? <span className="text-green-400 font-medium">✓</span> : <span className="text-gray-600">—</span>}
-                    </td>
-                    <td className="py-2 px-3 text-right">{item.n}</td>
-                    <td className="py-2 px-3 text-right">{item.wins}</td>
-                    <td className="py-2 px-3 text-right text-gray-500">{Number(item.expectedWins).toFixed(2)}</td>
-                    <td className={`py-2 px-3 text-right font-medium ${Number(item.alphaz) > 0 ? 'text-green-400' : Number(item.alphaz) < -1 ? 'text-red-400' : ''}`}>{Number(item.alphaz).toFixed(2)}</td>
-                    <td className="py-2 px-3 text-right">{(Number(item.hedgeRate) * 100).toFixed(1)}%</td>
-                    <td className="py-2 px-3 text-right">{(Number(item.lateSnipingRate) * 100).toFixed(1)}%</td>
-                    <td className="py-2 px-3 text-gray-500">{item.lastTradeAt ? new Date(item.lastTradeAt).toLocaleDateString() : "—"}</td>
-                  </tr>
-                ))}
+                {items.map((item, i) => {
+                  const n = item.n || 1;
+                  const winRate = (item.wins / n) * 100;
+                  const expectedRate = (Number(item.expectedWins) / n) * 100;
+                  // ROI: each win pays ~$1/avgPrice, cost = $avgPrice per trade × N trades
+                  // Simplified: (wins × (1/avgPrice) - N × avgPrice) / (N × avgPrice) ... but we use (wins - expectedWins) as proxy
+                  // Better: total payout = wins × $1, total cost = Σ prices ≈ expectedWins, ROI = (payout - cost) / cost
+                  const totalCost = Number(item.expectedWins); // sum of prices = expected wins
+                  const roi = totalCost > 0 ? ((item.wins - totalCost) / totalCost) * 100 : 0;
+                  const az = Number(item.alphaz);
+                  const isTop = item.isFollowable;
+
+                  return (
+                    <tr key={item.wallet} className={`border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors ${isTop ? "bg-green-950/10" : ""}`}>
+                      <td className="py-1.5 px-2.5 text-gray-600">{i + 1}</td>
+                      <td className="py-1.5 px-2.5 font-mono">
+                        <Link href={`/wallet/${item.wallet}`} className="text-blue-400 hover:underline">
+                          {item.wallet.slice(0, 6)}…{item.wallet.slice(-4)}
+                        </Link>
+                        {isTop && <span className="ml-1 text-green-400 text-[10px]" title="Followable">✓</span>}
+                      </td>
+                      <td className="py-1.5 px-2.5 text-right font-bold text-blue-400">{Number(item.followScore).toFixed(1)}</td>
+                      <td className="py-1.5 px-2.5 text-right text-gray-400">
+                        <span className="text-gray-200">{item.n}</span>/<span className={item.wins > 0 ? "text-green-400 font-semibold" : ""}>{item.wins}</span>
+                      </td>
+                      <td className={`py-1.5 px-2.5 text-right font-semibold ${winRate > expectedRate ? "text-green-400" : winRate > 0 ? "text-yellow-400" : "text-gray-500"}`}>
+                        {winRate.toFixed(1)}%
+                      </td>
+                      <td className="py-1.5 px-2.5 text-right text-gray-600">{expectedRate.toFixed(1)}%</td>
+                      <td className={`py-1.5 px-2.5 text-right font-bold ${az > 2 ? "text-green-400" : az > 0 ? "text-green-400/70" : az > -1 ? "text-gray-400" : "text-red-400"}`}>
+                        {az.toFixed(1)}
+                      </td>
+                      <td className={`py-1.5 px-2.5 text-right font-semibold ${roi > 0 ? "text-green-400" : roi < -50 ? "text-red-400/60" : "text-gray-500"}`}>
+                        {roi > 0 ? "+" : ""}{roi.toFixed(0)}%
+                      </td>
+                      <td className="py-1.5 px-2.5 text-right text-gray-600">
+                        {(Number(item.hedgeRate) * 100).toFixed(0)}/{(Number(item.lateSnipingRate) * 100).toFixed(0)}
+                      </td>
+                      <td className="py-1.5 px-2.5 text-gray-600" title={item.lastTradeAt ? new Date(item.lastTradeAt).toLocaleString() : ""}>
+                        {item.lastTradeAt ? daysAgo(item.lastTradeAt) : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Quick legend */}
+        {!loading && items.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-600">
+            <span><strong className="text-gray-400">N/W</strong> = Trade/Vittorie</span>
+            <span><strong className="text-gray-400">Win%</strong> = % vittorie reali</span>
+            <span><strong className="text-gray-400">E[W%]</strong> = % vittorie attese</span>
+            <span><strong className="text-gray-400">αZ</strong> = Alpha Z-score</span>
+            <span><strong className="text-gray-400">ROI</strong> = Rendimento simulato</span>
+            <span><strong className="text-gray-400">H/L%</strong> = Hedge/Late rate</span>
           </div>
         )}
       </main>
