@@ -14,10 +14,11 @@ import type { CronContext, CronResult } from "@/lib/cronGuard";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const TIME_BUDGET_MS = 25_000;
-const MAX_WALLETS_PER_RUN = 10;
-const MAX_TARGET_WALLETS = 100;
-const MAX_PRICE_TOKENS = 50;
+const TIME_BUDGET_MS = 55_000;
+const MAX_WALLETS_PER_RUN = 50;
+const MAX_TARGET_WALLETS = 200;
+const MAX_PRICE_TOKENS = 30;
+const TRADES_PER_SIDE = 100;
 
 function toTradeRow(t: TradeNormalized): TradeRow {
   return {
@@ -30,17 +31,37 @@ function toTradeRow(t: TradeNormalized): TradeRow {
 async function syncLiveHandler(ctx: CronContext): Promise<CronResult> {
   let statusFinal: "success" | "partial" = "success";
 
-  /* 1) Build target wallet list (followable + watchlist, deduped) */
-  const followableRes = await query(
-    `SELECT wallet FROM wallet_profiles
-     WHERE is_followable = true
-     ORDER BY follow_score DESC
-     LIMIT 50`
+  /* 1) Build target wallet list:
+     - followable wallets (top priority)
+     - wallets with positive αZ at any threshold (have real edge)
+     - wallets with positive follow_score (decent performance)
+     - watchlist wallets (manual additions)
+     All deduped, ordered by priority */
+  const smartWalletsRes = await query(
+    `SELECT DISTINCT ON (w.wallet) w.wallet, wp.follow_score
+     FROM (
+       -- Priority 1: followable wallets
+       SELECT wallet, 1 as priority FROM wallet_profiles WHERE is_followable = true
+       UNION ALL
+       -- Priority 2: wallets with αZ > 0 at threshold 0.02
+       SELECT wallet, 2 as priority FROM wallet_profiles WHERE alphaz_02 > 0
+       UNION ALL
+       -- Priority 3: wallets with positive follow_score
+       SELECT wallet, 3 as priority FROM wallet_profiles WHERE follow_score > 0
+       UNION ALL
+       -- Priority 4: wallets with αZ > 0 at ANY threshold
+       SELECT DISTINCT ws.wallet, 4 as priority FROM wallet_stats ws WHERE ws.alphaz > 0 AND ws.n >= 3
+     ) w
+     JOIN wallet_profiles wp ON wp.wallet = w.wallet
+     ORDER BY w.wallet, w.priority ASC`
   );
   const watchlistRes = await query(`SELECT wallet FROM wallet_watchlist`);
 
   const walletSet = new Set<string>();
-  for (const r of followableRes.rows) walletSet.add(r.wallet as string);
+  // Add in priority order
+  const sortedWallets = (smartWalletsRes.rows as Array<{wallet: string; follow_score: number}>)
+    .sort((a, b) => Number(b.follow_score) - Number(a.follow_score));
+  for (const r of sortedWallets) walletSet.add(r.wallet);
   for (const r of watchlistRes.rows) walletSet.add(r.wallet as string);
 
   const allWallets = Array.from(walletSet).slice(0, MAX_TARGET_WALLETS);
@@ -67,10 +88,10 @@ async function syncLiveHandler(ctx: CronContext): Promise<CronResult> {
       const lastTs: string | null =
         cursorRes.rows.length > 0 ? (cursorRes.rows[0].last_ts as string) : null;
 
-      // Fetch BUY + SELL in parallel
+      // Fetch BUY + SELL in parallel (limited per side for speed)
       const [buyResult, sellResult] = await Promise.all([
-        fetchUserTradesPage({ wallet, limit: 200, offset: 0, side: "BUY" }),
-        fetchUserTradesPage({ wallet, limit: 200, offset: 0, side: "SELL" }),
+        fetchUserTradesPage({ wallet, limit: TRADES_PER_SIDE, offset: 0, side: "BUY" }),
+        fetchUserTradesPage({ wallet, limit: TRADES_PER_SIDE, offset: 0, side: "SELL" }),
       ]);
 
       // Merge and dedup by pk

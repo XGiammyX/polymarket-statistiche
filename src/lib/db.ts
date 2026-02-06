@@ -224,6 +224,25 @@ export async function ensureTradeBackfillRowsForResolvedMarkets(
   return res.rowCount ?? 0;
 }
 
+export async function ensureTradeBackfillRowsForActiveMarkets(
+  limit: number
+): Promise<number> {
+  // Add open/active markets to backfill so we get their trades too
+  const res = await query(
+    `INSERT INTO trade_backfill (condition_id, next_offset, done)
+     SELECT m.condition_id, 0, false
+     FROM markets m
+     WHERE (m.closed = false OR m.closed IS NULL)
+       AND NOT EXISTS (
+         SELECT 1 FROM trade_backfill tb WHERE tb.condition_id = m.condition_id
+       )
+     LIMIT $1
+     ON CONFLICT (condition_id) DO NOTHING`,
+    [limit]
+  );
+  return res.rowCount ?? 0;
+}
+
 export interface BackfillItem {
   condition_id: string;
   next_offset: number;
@@ -232,12 +251,17 @@ export interface BackfillItem {
 export async function pickTradeBackfillBatch(
   limitMarkets: number
 ): Promise<BackfillItem[]> {
+  // Prioritize OPEN markets (closed=false) over closed ones
+  // Then sort by updated_at ASC so we process least-recently-touched first
   const res = await query(
-    `SELECT condition_id, next_offset
-     FROM trade_backfill
-     WHERE done = false
-       AND (next_retry_at IS NULL OR next_retry_at <= now())
-     ORDER BY updated_at ASC NULLS FIRST
+    `SELECT tb.condition_id, tb.next_offset
+     FROM trade_backfill tb
+     LEFT JOIN markets m ON m.condition_id = tb.condition_id
+     WHERE tb.done = false
+       AND (tb.next_retry_at IS NULL OR tb.next_retry_at <= now())
+     ORDER BY
+       (CASE WHEN m.closed = false OR m.closed IS NULL THEN 0 ELSE 1 END) ASC,
+       tb.updated_at ASC NULLS FIRST
      LIMIT $1`,
     [limitMarkets]
   );

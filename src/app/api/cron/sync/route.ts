@@ -5,6 +5,7 @@ import {
   getEtlState,
   setEtlState,
   ensureTradeBackfillRowsForResolvedMarkets,
+  ensureTradeBackfillRowsForActiveMarkets,
   pickTradeBackfillBatch,
   markTradeBackfillProgress,
   markTradeBackfillError,
@@ -211,7 +212,11 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
      C) PREPARE TRADE_BACKFILL (DB only)
      ═══════════════════════════════════════════════════ */
   let backfillRowsCreated = 0;
+  let activeBackfillRows = 0;
   try {
+    // Queue active/open markets for trade backfill FIRST
+    activeBackfillRows = await ensureTradeBackfillRowsForActiveMarkets(500);
+    // Then queue resolved markets
     backfillRowsCreated =
       await ensureTradeBackfillRowsForResolvedMarkets(500);
   } catch (err) {
@@ -219,6 +224,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
       `[sync] backfill prep error: ${err instanceof Error ? err.message : err}`
     );
   }
+  console.log(`[sync] rid=${ctx.requestId} backfill: active=${activeBackfillRows} resolved=${backfillRowsCreated}`);
 
   /* ═══════════════════════════════════════════════════
      D) SYNC TRADES (Data API) — batch 5 markets, 500 trades/page
@@ -228,7 +234,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
   let tradesCompleted = 0;
 
   try {
-    const batch = await pickTradeBackfillBatch(15);
+    const batch = await pickTradeBackfillBatch(25);
 
     for (const item of batch) {
       if (ctx.elapsed() > TIME_BUDGET_MS) {
