@@ -74,11 +74,31 @@ export default function Home() {
         {/* Page description */}
         <div className="mb-6">
           <h2 className="text-xl font-bold mb-1">Leaderboard</h2>
-          <p className="text-sm text-gray-400">
-            Classifica dei wallet che piazzano scommesse a bassa probabilità su Polymarket.
-            I wallet sono ordinati per <strong>Follow Score</strong>, che misura la capacità
-            di vincere scommesse improbabili. Clicca su un wallet per i dettagli.
+          <p className="text-sm text-gray-400 leading-relaxed">
+            Classifica dei wallet che piazzano scommesse a bassa probabilità su Polymarket
+            e vincono più spesso del previsto. Il sistema analizza migliaia di trade e identifica
+            chi ha un vantaggio statistico reale.
           </p>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Follow Score</strong> — Punteggio composito che combina
+              Alpha-Z, numero di trade, basso hedge rate e bassa late-sniping rate.
+              Più alto = wallet più affidabile da seguire.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Alpha-Z</strong> — Deviazione standard delle vittorie
+              rispetto al valore atteso. Un valore &gt; 2 indica che il wallet vince
+              significativamente più del caso.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Hedge%</strong> — Percentuale di mercati dove il wallet
+              scommette su entrambi i lati (copre il rischio). Un valore basso è migliore.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Late%</strong> — Percentuale di trade piazzati nell&apos;ultimo
+              giorno prima della chiusura (sniping). Un valore basso è migliore.
+            </div>
+          </div>
         </div>
 
         {/* Health summary */}

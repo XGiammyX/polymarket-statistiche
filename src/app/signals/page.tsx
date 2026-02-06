@@ -67,13 +67,27 @@ export default function SignalsPage() {
       <main className="max-w-7xl mx-auto px-6 py-6">
         <div className="mb-6">
           <h2 className="text-xl font-bold mb-1">Segnali Live</h2>
-          <p className="text-sm text-gray-400">
-            Scommesse BUY a bassa probabilità piazzate di recente da wallet affidabili.
-            Se &quot;Solo Attivi&quot; è selezionato, vengono mostrati solo i segnali dove
-            il wallet ha ancora una posizione aperta (net shares &gt; 0).
+          <p className="text-sm text-gray-400 leading-relaxed">
+            Scommesse BUY a bassa probabilità piazzate di recente da wallet con un track record
+            di vittorie improbabili. Questi sono segnali &quot;copiabili&quot;: puoi vedere cosa
+            stanno comprando i migliori trader e a che prezzo.
           </p>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-gray-500">
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Entry</strong> — Prezzo a cui il wallet ha comprato
+              il token. Più basso = scommessa più rischiosa ma con rendimento potenziale più alto.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Prezzo att.</strong> — Prezzo corrente del token
+              sul mercato CLOB. Il delta (verde/rosso) mostra il guadagno/perdita rispetto all&apos;entry.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Solo Attivi</strong> — Filtra solo i segnali dove
+              il wallet ha ancora shares in mano (non ha venduto). I segnali chiusi vengono nascosti.
+            </div>
+          </div>
           {lastSync && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-3">
               Ultimo sync live: <strong className="text-gray-400">{new Date(lastSync).toLocaleString()}</strong>
             </p>
           )}

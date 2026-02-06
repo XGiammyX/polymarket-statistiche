@@ -108,10 +108,30 @@ export default function WalletPage() {
       <main className="max-w-5xl mx-auto px-6 py-6">
         <div className="mb-6">
           <h2 className="text-xl font-bold mb-1">Dettaglio Wallet</h2>
-          <p className="text-sm text-gray-400 mb-2">
-            Profilo, statistiche per soglia, vittorie improbabili, posizioni aperte e scommesse recenti.
+          <p className="text-sm text-gray-400 leading-relaxed">
+            Analisi completa di un singolo wallet. Vedi il profilo (Follow Score, se è followable),
+            le statistiche per ogni soglia di probabilità, le vittorie improbabili più significative,
+            le posizioni ancora aperte e le scommesse recenti a bassa probabilità.
           </p>
-          <p className="text-xs font-mono text-gray-500 break-all bg-gray-900 rounded px-3 py-2">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Profilo</strong> — Mostra se il wallet è &quot;followable&quot;
+              (cioè ha un buon Alpha-Z, abbastanza trade, basso hedge e bassa late-sniping rate).
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Upset Wins</strong> — Vittorie su mercati dove il wallet
+              ha scommesso a probabilità molto bassa e ha vinto. Sono la prova del vantaggio informativo.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Posizioni aperte</strong> — Mercati dove il wallet ha
+              ancora shares. Mostra il prezzo corrente per valutare il P&amp;L potenziale.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Scommesse recenti</strong> — Ultimi 7 giorni di trade
+              BUY a probabilità ≤ 5%, inclusi quelli non ancora risolti.
+            </div>
+          </div>
+          <p className="text-xs font-mono text-gray-500 break-all bg-gray-900 rounded px-3 py-2 mt-3">
             {address}
           </p>
         </div>

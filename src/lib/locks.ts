@@ -8,3 +8,4 @@ export async function tryAdvisoryLock(lockKey: number): Promise<boolean> {
 export async function unlockAdvisoryLock(lockKey: number): Promise<void> {
   await query("SELECT pg_advisory_unlock($1)", [lockKey]);
 }
+

@@ -128,10 +128,24 @@ export default function WatchlistPage() {
         <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
           <div>
             <h2 className="text-xl font-bold mb-1">Watchlist</h2>
-            <p className="text-sm text-gray-400">
-              Gestione wallet monitorati manualmente. I wallet in watchlist vengono inclusi nel sync-live
-              insieme ai wallet followable. Puoi aggiungere/rimuovere wallet e forzare un sync live.
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Lista manuale di wallet da monitorare. I wallet aggiunti qui vengono inclusi
+              nel job &quot;sync-live&quot; insieme a quelli followable automatici, così puoi
+              tracciare le posizioni e i segnali anche di wallet che non hanno ancora abbastanza dati
+              per entrare nella leaderboard.
             </p>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">
+              <div className="bg-gray-900/60 rounded p-2.5">
+                <strong className="text-gray-300">Aggiungi wallet</strong> — Incolla l&apos;indirizzo 0x...
+                di un wallet Polymarket che vuoi monitorare. I suoi trade verranno scaricati
+                al prossimo sync-live.
+              </div>
+              <div className="bg-gray-900/60 rounded p-2.5">
+                <strong className="text-gray-300">Force Live Sync</strong> — Lancia subito il job
+                sync-live che scarica i trade recenti di tutti i wallet (followable + watchlist),
+                aggiorna le posizioni aperte e i prezzi.
+              </div>
+            </div>
           </div>
           {/* Secret */}
           <div className="flex items-end gap-3">

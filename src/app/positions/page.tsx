@@ -66,11 +66,25 @@ export default function PositionsPage() {
       <main className="max-w-7xl mx-auto px-6 py-6">
         <div className="mb-6">
           <h2 className="text-xl font-bold mb-1">Posizioni Aperte</h2>
-          <p className="text-sm text-gray-400">
-            Posizioni attive (net shares &gt; 0) dei wallet followable. Mostra il prezzo
-            corrente del token quando disponibile. Filtra per wallet specifico incollando
-            l&apos;indirizzo completo.
+          <p className="text-sm text-gray-400 leading-relaxed">
+            Tutte le posizioni attualmente aperte dei wallet migliori. Una posizione è &quot;aperta&quot;
+            quando il wallet ha ancora shares in un mercato (ha comprato ma non ha ancora venduto).
+            Utile per capire su quali mercati i trader migliori sono esposti.
           </p>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-gray-500">
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Shares</strong> — Quantità netta di token detenuti.
+              Calcolato come somma dei BUY meno i SELL. Se scende a 0, la posizione scompare.
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Prezzo att.</strong> — Prezzo corrente del token
+              sul CLOB di Polymarket (aggiornato ogni 10 minuti dal sync-live).
+            </div>
+            <div className="bg-gray-900/60 rounded p-2.5">
+              <strong className="text-gray-300">Filtra wallet</strong> — Incolla un indirizzo 0x...
+              completo per vedere solo le posizioni di quel wallet specifico.
+            </div>
+          </div>
         </div>
 
         {/* Filters */}

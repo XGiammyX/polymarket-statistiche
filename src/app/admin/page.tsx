@@ -98,10 +98,33 @@ export default function AdminPage() {
         <main className="max-w-6xl mx-auto px-6 py-6 space-y-6">
           <div>
             <h2 className="text-xl font-bold mb-1">Admin Panel</h2>
-            <p className="text-sm text-gray-400">
-              Gestione ETL: trigger sync/compute manualmente, monitoraggio stato, log esecuzioni.
-              Inserisci l&apos;Admin Secret per autenticarti.
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Pannello di controllo per gestire i job ETL (Extract-Transform-Load) che alimentano
+              tutti i dati dell&apos;applicazione. Da qui puoi triggerare manualmente i job,
+              monitorare lo stato e diagnosticare errori.
             </p>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">
+              <div className="bg-gray-900/60 rounded p-2.5">
+                <strong className="text-gray-300">Run Sync</strong> — Scarica mercati da Gamma API
+                e trade da Data API. Popola le tabelle markets, resolutions e trades. Va lanciato
+                più volte per scaricare tutto il backlog.
+              </div>
+              <div className="bg-gray-900/60 rounded p-2.5">
+                <strong className="text-gray-300">Run Compute</strong> — Calcola wallet_stats
+                (vittorie, Alpha-Z per soglia) e wallet_profiles (Follow Score, followable).
+                Richiede dati da sync.
+              </div>
+              <div className="bg-gray-900/60 rounded p-2.5">
+                <strong className="text-gray-300">Run Live Sync</strong> — Scarica trade recenti
+                (BUY + SELL) dei wallet followable, aggiorna posizioni aperte e prezzi correnti.
+                Disponibile dalla Watchlist.
+              </div>
+              <div className="bg-gray-900/60 rounded p-2.5">
+                <strong className="text-gray-300">Reset Market Offset</strong> — Riporta il cursore
+                dei mercati a 0 per ri-scaricare tutti i mercati da capo. Utile se ci sono stati
+                problemi di sync.
+              </div>
+            </div>
           </div>
           {/* Secret input */}
           <div className="flex items-end gap-3">
