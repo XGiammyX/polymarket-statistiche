@@ -111,7 +111,8 @@ export default function RecommendationsPage() {
   const [data, setData] = useState<RecommendationsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"picks" | "wallets" | "positions" | "proof">("picks");
+  const [tab, setTab] = useState<"picks" | "wallets" | "positions" | "proof" | "copyall">("picks");
+  const [copied, setCopied] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -210,6 +211,7 @@ export default function RecommendationsPage() {
         <div className="flex gap-1 mb-5 bg-gray-900/50 rounded-lg p-1 w-fit">
           {[
             { key: "picks" as const, label: "Scommesse consigliate", count: picks.length },
+            { key: "copyall" as const, label: "Copia tutto", count: picks.filter((p) => p.slug).length },
             { key: "wallets" as const, label: "Wallet da seguire", count: data?.topWallets.length ?? 0 },
             { key: "positions" as const, label: "Posizioni aperte", count: data?.openPositions.length ?? 0 },
             { key: "proof" as const, label: "Vittorie passate", count: data?.provenWins.length ?? 0 },
@@ -286,14 +288,17 @@ export default function RecommendationsPage() {
                               </p>
                             </div>
                             {p.slug && (
-                              <a
-                                href={`https://polymarket.com/market/${p.slug}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
-                              >
-                                Apri su Polymarket ↗
-                              </a>
+                              <div className="flex flex-col gap-1.5 flex-shrink-0">
+                                <a
+                                  href={`https://polymarket.com/event/${p.slug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors text-center"
+                                >
+                                  Compra Outcome #{p.outcomeIndex} ↗
+                                </a>
+                                <span className="text-[9px] text-gray-600 text-center">su Polymarket</span>
+                              </div>
                             )}
                           </div>
 
@@ -339,6 +344,128 @@ export default function RecommendationsPage() {
                                 </Link>
                               </span>
                             </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ═══ TAB: COPY ALL ═══ */}
+            {tab === "copyall" && (
+              <div className="space-y-4">
+                {picks.filter((p) => p.slug).length === 0 ? (
+                  <div className="text-center py-16">
+                    <p className="text-gray-500 text-sm">Nessun mercato con link disponibile al momento.</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Quick action bar */}
+                    <div className="bg-blue-950/20 border border-blue-800/30 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="text-white font-semibold text-sm">Lista scommesse da copiare</h3>
+                          <p className="text-gray-400 text-xs mt-0.5">
+                            {picks.filter((p) => p.slug).length} mercati — clicca &quot;Copia lista&quot; per avere tutti i link pronti
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const lines = picks
+                              .filter((p) => p.slug)
+                              .map((p, i) => {
+                                const ret = potentialReturn(Number(p.price));
+                                return `${i + 1}. ${p.question || "Mercato"}\n   Outcome #${p.outcomeIndex} — Entry: $${Number(p.price).toFixed(4)} — Se vince: ${ret}\n   Wallet αZ: ${Number(p.alphaz).toFixed(2)} — Score: ${Number(p.followScore).toFixed(1)}${p.isFollowable ? " ✓" : ""}\n   Link: https://polymarket.com/event/${p.slug}\n`;
+                              });
+                            navigator.clipboard.writeText(lines.join("\n")).then(() => {
+                              setCopied(true);
+                              setTimeout(() => setCopied(false), 3000);
+                            });
+                          }}
+                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                            copied
+                              ? "bg-green-600 text-white"
+                              : "bg-blue-600 hover:bg-blue-500 text-white"
+                          }`}
+                        >
+                          {copied ? "✓ Copiato!" : "Copia lista"}
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-gray-500">
+                        La lista include: nome mercato, outcome da comprare, entry price, rendimento potenziale, wallet score e link diretto a Polymarket.
+                      </p>
+                    </div>
+
+                    {/* Open all links */}
+                    <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="text-white font-semibold text-sm">Apri tutti i mercati</h3>
+                          <p className="text-gray-400 text-xs mt-0.5">
+                            Apre ogni mercato in un nuovo tab di Polymarket. Poi compra manualmente l&apos;outcome indicato.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            picks.filter((p) => p.slug).forEach((p, i) => {
+                              setTimeout(() => {
+                                window.open(`https://polymarket.com/event/${p.slug}`, `_blank_${i}`);
+                              }, i * 300);
+                            });
+                          }}
+                          className="px-4 py-2 rounded-md text-sm font-medium bg-purple-600 hover:bg-purple-500 text-white transition-colors"
+                        >
+                          Apri tutti ({picks.filter((p) => p.slug).length}) ↗
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-yellow-400/60">
+                        Il browser potrebbe bloccare i popup. Consenti i popup per questo sito se necessario.
+                      </p>
+                    </div>
+
+                    {/* Individual cards with direct links */}
+                    <h3 className="text-white font-semibold text-sm mt-2">Dettaglio per mercato</h3>
+                    {picks.filter((p) => p.slug).map((p, i) => {
+                      const entryPrice = Number(p.price);
+                      const ret = potentialReturn(entryPrice);
+
+                      return (
+                        <div key={`copy-${p.conditionId}-${p.outcomeIndex}-${i}`} className={`rounded-lg border p-3 ${p.isFollowable ? "bg-green-950/10 border-green-800/30" : "bg-gray-900/60 border-gray-800"}`}>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-white font-bold text-sm">{i + 1}.</span>
+                                <h4 className="text-sm text-white font-medium truncate">{p.question || "Mercato"}</h4>
+                                {p.isFollowable && <span className="text-green-400 text-[10px]">✓</span>}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+                                <span>
+                                  Compra <strong className="text-yellow-400">Outcome #{p.outcomeIndex}</strong>
+                                </span>
+                                <span>
+                                  Entry: <strong className="text-green-400">${entryPrice.toFixed(4)}</strong>
+                                </span>
+                                <span>
+                                  Se vince: <strong className="text-green-400">{ret}</strong>
+                                </span>
+                                <span>
+                                  αZ: <strong className={Number(p.alphaz) > 0 ? "text-green-400" : "text-gray-500"}>{Number(p.alphaz).toFixed(1)}</strong>
+                                </span>
+                                <span className="text-gray-600">
+                                  {p.walletCount} wallet · {timeAgo(p.ts)}
+                                </span>
+                              </div>
+                            </div>
+                            <a
+                              href={`https://polymarket.com/event/${p.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-2 rounded-md transition-colors"
+                            >
+                              Compra ↗
+                            </a>
                           </div>
                         </div>
                       );
@@ -444,8 +571,8 @@ export default function RecommendationsPage() {
                           <tr className="text-left text-gray-400 bg-gray-900/80 border-b border-gray-800">
                             <th className="py-2 px-3">Wallet</th>
                             <th className="py-2 px-3">Mercato</th>
+                            <th className="py-2 px-3 text-center">Outcome</th>
                             <th className="py-2 px-3 text-right">Shares</th>
-                            <th className="py-2 px-3 text-right">Prezzo</th>
                             <th className="py-2 px-3 text-right">Score</th>
                             <th className="py-2 px-3"></th>
                           </tr>
@@ -460,18 +587,16 @@ export default function RecommendationsPage() {
                                 {p.isFollowable && <span className="ml-1 text-green-400 text-[10px]">✓</span>}
                               </td>
                               <td className="py-2 px-3 max-w-xs truncate">{p.question || p.conditionId.slice(0, 20)}</td>
-                              <td className="py-2 px-3 text-right font-semibold">{Number(p.netShares).toFixed(1)}</td>
-                              <td className="py-2 px-3 text-right">
-                                {p.currentPrice != null ? (
-                                  <span className="text-yellow-400">${Number(p.currentPrice).toFixed(4)}</span>
-                                ) : "—"}
+                              <td className="py-2 px-3 text-center">
+                                <span className="text-yellow-400 font-medium">#{p.outcomeIndex}</span>
                               </td>
+                              <td className="py-2 px-3 text-right font-semibold">{Number(p.netShares).toFixed(1)}</td>
                               <td className="py-2 px-3 text-right text-blue-400 font-semibold">{Number(p.followScore).toFixed(1)}</td>
                               <td className="py-2 px-3">
                                 {p.slug && (
-                                  <a href={`https://polymarket.com/market/${p.slug}`} target="_blank" rel="noopener noreferrer"
-                                    className="text-blue-500 hover:underline text-[10px] bg-blue-500/10 px-2 py-0.5 rounded">
-                                    Polymarket ↗
+                                  <a href={`https://polymarket.com/event/${p.slug}`} target="_blank" rel="noopener noreferrer"
+                                    className="text-white hover:bg-blue-500 bg-blue-600 text-[10px] px-2.5 py-1 rounded font-medium">
+                                    Compra #{p.outcomeIndex} ↗
                                   </a>
                                 )}
                               </td>
