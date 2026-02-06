@@ -94,31 +94,43 @@ export default function SignalsPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-end mb-5 bg-gray-900/50 rounded-lg p-4">
-          <label className="flex flex-col text-sm">
-            <span className="text-gray-400 mb-1">Soglia prezzo</span>
-            <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={threshold} onChange={(e) => setThreshold(e.target.value)}>
-              <option value="0.05">≤ 0.05</option>
-              <option value="0.02">≤ 0.02</option>
-              <option value="0.01">≤ 0.01</option>
-            </select>
-          </label>
-          <label className="flex flex-col text-sm">
-            <span className="text-gray-400 mb-1">Periodo</span>
-            <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={hours} onChange={(e) => setHours(e.target.value)}>
-              <option value="24">24h</option>
-              <option value="72">72h</option>
-              <option value="168">7 giorni</option>
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer pt-5">
-            <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
-            <span className="text-gray-400">Solo Followable</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer pt-5">
-            <input type="checkbox" className="accent-green-500" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />
-            <span className="text-gray-400">Solo Attivi</span>
-          </label>
+        <div className="mb-5 bg-gray-900/50 rounded-lg p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <label className="flex flex-col text-sm">
+              <span className="text-gray-400 mb-1">Soglia prezzo</span>
+              <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={threshold} onChange={(e) => setThreshold(e.target.value)}>
+                <option value="0.05">≤ 0.05 (5%)</option>
+                <option value="0.02">≤ 0.02 (2%)</option>
+                <option value="0.01">≤ 0.01 (1%)</option>
+              </select>
+              <span className="text-[10px] text-gray-600 mt-1">Mostra solo segnali con entry price sotto questa soglia</span>
+            </label>
+            <label className="flex flex-col text-sm">
+              <span className="text-gray-400 mb-1">Finestra temporale</span>
+              <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={hours} onChange={(e) => setHours(e.target.value)}>
+                <option value="24">Ultime 24 ore</option>
+                <option value="72">Ultimi 3 giorni</option>
+                <option value="168">Ultima settimana</option>
+              </select>
+              <span className="text-[10px] text-gray-600 mt-1">Quanto indietro cercare i segnali recenti</span>
+            </label>
+            <label className="flex flex-col text-sm justify-between">
+              <span className="text-gray-400 mb-1">Solo wallet top</span>
+              <div className="flex items-center gap-2 bg-gray-800 rounded px-3 py-1.5">
+                <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
+                <span className="text-gray-300 text-sm">Followable</span>
+              </div>
+              <span className="text-[10px] text-gray-600 mt-1">Solo segnali da wallet con track record verificato</span>
+            </label>
+            <label className="flex flex-col text-sm justify-between">
+              <span className="text-gray-400 mb-1">Posizioni attive</span>
+              <div className="flex items-center gap-2 bg-gray-800 rounded px-3 py-1.5">
+                <input type="checkbox" className="accent-green-500" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />
+                <span className="text-gray-300 text-sm">Solo attivi</span>
+              </div>
+              <span className="text-[10px] text-gray-600 mt-1">Escludi segnali dove il wallet ha già venduto le shares</span>
+            </label>
+          </div>
         </div>
 
         {error && (

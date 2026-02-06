@@ -94,6 +94,10 @@ export async function GET(req: NextRequest) {
       ok: true,
       count: positions.length,
       positions,
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+      },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

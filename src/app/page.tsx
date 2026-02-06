@@ -124,32 +124,41 @@ export default function Home() {
         )}
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-end mb-5 bg-gray-900/50 rounded-lg p-4">
-          <label className="flex flex-col text-sm">
-            <span className="text-gray-400 mb-1">Threshold</span>
-            <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={threshold} onChange={(e) => setThreshold(e.target.value)}>
-              <option value="0.05">≤ 0.05</option>
-              <option value="0.02">≤ 0.02</option>
-              <option value="0.01">≤ 0.01</option>
-            </select>
-          </label>
-          <label className="flex flex-col text-sm">
-            <span className="text-gray-400 mb-1">Min N</span>
-            <input className="bg-gray-800 rounded px-3 py-1.5 w-20 text-sm" value={minN} onChange={(e) => setMinN(e.target.value)} />
-          </label>
-          <label className="flex flex-col text-sm">
-            <span className="text-gray-400 mb-1">Ordina per</span>
-            <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={sort} onChange={(e) => setSort(e.target.value)}>
-              <option value="followScore">Follow Score</option>
-              <option value="alphaz">Alpha Z</option>
-              <option value="wins">Wins</option>
-              <option value="n">N trades</option>
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer pt-5">
-            <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
-            <span className="text-gray-400">Solo Followable</span>
-          </label>
+        <div className="mb-5 bg-gray-900/50 rounded-lg p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <label className="flex flex-col text-sm">
+              <span className="text-gray-400 mb-1">Soglia prezzo</span>
+              <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={threshold} onChange={(e) => setThreshold(e.target.value)}>
+                <option value="0.05">≤ 0.05 (5%)</option>
+                <option value="0.02">≤ 0.02 (2%)</option>
+                <option value="0.01">≤ 0.01 (1%)</option>
+              </select>
+              <span className="text-[10px] text-gray-600 mt-1">Considera solo trade sotto questa probabilità implicita</span>
+            </label>
+            <label className="flex flex-col text-sm">
+              <span className="text-gray-400 mb-1">Trade minimi</span>
+              <input className="bg-gray-800 rounded px-3 py-1.5 w-full text-sm" type="number" min="1" value={minN} onChange={(e) => setMinN(e.target.value)} />
+              <span className="text-[10px] text-gray-600 mt-1">Quanti trade low-prob servono per entrare in classifica</span>
+            </label>
+            <label className="flex flex-col text-sm">
+              <span className="text-gray-400 mb-1">Ordina per</span>
+              <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={sort} onChange={(e) => setSort(e.target.value)}>
+                <option value="followScore">Follow Score</option>
+                <option value="alphaz">Alpha Z</option>
+                <option value="wins">Vittorie</option>
+                <option value="n">N° trade</option>
+              </select>
+              <span className="text-[10px] text-gray-600 mt-1">Metrica usata per ordinare la classifica</span>
+            </label>
+            <label className="flex flex-col text-sm justify-between">
+              <span className="text-gray-400 mb-1">Filtro qualità</span>
+              <div className="flex items-center gap-2 bg-gray-800 rounded px-3 py-1.5">
+                <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
+                <span className="text-gray-300 text-sm">Solo Followable</span>
+              </div>
+              <span className="text-[10px] text-gray-600 mt-1">Mostra solo wallet con N≥20, AlphaZ&gt;0, Hedge≤25%</span>
+            </label>
+          </div>
         </div>
 
         {updatedAt && (

@@ -127,6 +127,10 @@ export async function GET(
       `[/api/wallet] requestId=${requestId} wallet=${wallet} durationMs=${durationMs}`
     );
 
+    const cacheHeaders = {
+      "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+    };
+
     if (!profile) {
       return NextResponse.json({
         ok: true,
@@ -137,7 +141,7 @@ export async function GET(
         recentBets,
         threshold,
         message: "No profile found. Wallet may not have enough low-prob trades.",
-      });
+      }, { headers: cacheHeaders });
     }
 
     return NextResponse.json({
@@ -157,7 +161,7 @@ export async function GET(
       upsetWins,
       recentBets,
       threshold,
-    });
+    }, { headers: cacheHeaders });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[/api/wallet] requestId=${requestId} error=${message}`);

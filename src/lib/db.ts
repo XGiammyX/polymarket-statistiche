@@ -8,9 +8,9 @@ function getPool(): Pool {
   if (!globalForPg._pgPool) {
     globalForPg._pgPool = new Pool({
       connectionString: getDatabaseUrl(),
-      max: 5,
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 10_000,
+      max: 3,                       // Vercel serverless: keep low to avoid Neon connection limits
+      idleTimeoutMillis: 10_000,    // Release idle connections fast (saves Neon compute)
+      connectionTimeoutMillis: 5_000,
       ssl: true,
     });
   }

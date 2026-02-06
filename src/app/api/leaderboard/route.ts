@@ -107,6 +107,10 @@ export async function GET(req: NextRequest) {
       threshold,
       count: items.length,
       items,
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+      },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -88,20 +88,27 @@ export default function PositionsPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-end mb-5 bg-gray-900/50 rounded-lg p-4">
-          <label className="flex flex-col text-sm">
-            <span className="text-gray-400 mb-1">Filtra wallet</span>
-            <input
-              className="bg-gray-800 rounded px-3 py-1.5 w-80 text-sm font-mono"
-              value={walletFilter}
-              onChange={(e) => setWalletFilter(e.target.value)}
-              placeholder="0x... (opzionale)"
-            />
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer pt-5">
-            <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
-            <span className="text-gray-400">Solo Followable</span>
-          </label>
+        <div className="mb-5 bg-gray-900/50 rounded-lg p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <label className="flex flex-col text-sm sm:col-span-2">
+              <span className="text-gray-400 mb-1">Cerca wallet</span>
+              <input
+                className="bg-gray-800 rounded px-3 py-1.5 w-full text-sm font-mono"
+                value={walletFilter}
+                onChange={(e) => setWalletFilter(e.target.value)}
+                placeholder="0x... (incolla un indirizzo completo)"
+              />
+              <span className="text-[10px] text-gray-600 mt-1">Inserisci un indirizzo 0x per filtrare le posizioni di un singolo wallet. Lascia vuoto per vedere tutti.</span>
+            </label>
+            <label className="flex flex-col text-sm justify-between">
+              <span className="text-gray-400 mb-1">Filtro qualità</span>
+              <div className="flex items-center gap-2 bg-gray-800 rounded px-3 py-1.5">
+                <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
+                <span className="text-gray-300 text-sm">Solo Followable</span>
+              </div>
+              <span className="text-[10px] text-gray-600 mt-1">Mostra solo posizioni di wallet verificati con vantaggio statistico</span>
+            </label>
+          </div>
         </div>
 
         {error && (
