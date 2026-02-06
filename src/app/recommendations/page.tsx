@@ -168,6 +168,134 @@ export default function RecommendationsPage() {
           )}
         </div>
 
+        {/* ═══ GUIDA SCOMMESSE ═══ */}
+        {!loading && (
+          <details className="mb-5 group">
+            <summary className="cursor-pointer text-sm font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-2">
+              <span className="text-lg">📘</span> Come scommettere — guida rapida
+              <span className="text-[10px] text-gray-600 font-normal">(clicca per aprire)</span>
+            </summary>
+            <div className="mt-3 space-y-3 text-xs text-gray-300">
+              {/* QUANDO scommettere */}
+              <div className="bg-blue-950/20 border border-blue-800/30 rounded-lg p-4">
+                <h3 className="text-blue-400 font-bold text-sm mb-2">Quando scommettere</h3>
+                <div className="space-y-2 text-gray-400">
+                  <div className="flex gap-2">
+                    <span className="text-green-400 flex-shrink-0">✓</span>
+                    <span><strong className="text-white">Pick con fiducia ALTA o MEDIA</strong> — Il sistema ha già filtrato i pick migliori. Concentrati su quelli in cima alla lista.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-green-400 flex-shrink-0">✓</span>
+                    <span><strong className="text-white">Più wallet convergono</strong> — Se 2+ wallet smart comprano lo stesso outcome, il segnale è più forte.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-green-400 flex-shrink-0">✓</span>
+                    <span><strong className="text-white">EV positivo</strong> — Se la colonna EV è verde (+), il valore atteso è a tuo favore secondo il modello.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-red-400 flex-shrink-0">✗</span>
+                    <span><strong className="text-white">NON scommettere</strong> se il mercato chiude tra poche ore — potresti non riuscire a vendere se cambi idea.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-red-400 flex-shrink-0">✗</span>
+                    <span><strong className="text-white">NON scommettere</strong> se il prezzo è già salito molto rispetto all&apos;entry — il rapporto rischio/rendimento non è più lo stesso.</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* COME scommettere */}
+              <div className="bg-purple-950/20 border border-purple-800/30 rounded-lg p-4">
+                <h3 className="text-purple-400 font-bold text-sm mb-2">Come scommettere su Polymarket</h3>
+                <div className="space-y-1.5 text-gray-400">
+                  <p><strong className="text-white">1.</strong> Clicca <strong className="text-blue-400">&quot;Compra ↗&quot;</strong> sul pick → si apre Polymarket sul mercato.</p>
+                  <p><strong className="text-white">2.</strong> Cerca l&apos;outcome indicato (es. <strong className="text-yellow-400">&quot;Yes&quot;</strong> o <strong className="text-yellow-400">&quot;No&quot;</strong>) — il nome esatto è scritto sotto ogni pick.</p>
+                  <p><strong className="text-white">3.</strong> Inserisci l&apos;importo (vedi &quot;Size suggerita&quot; sotto ogni pick per la % del tuo bankroll).</p>
+                  <p><strong className="text-white">4.</strong> Conferma l&apos;acquisto. Il token ti costa il prezzo di mercato (es. $0.02) e paga $1.00 se vince.</p>
+                  <p><strong className="text-white">5.</strong> Puoi vendere in qualsiasi momento prima della risoluzione se cambi idea.</p>
+                </div>
+              </div>
+
+              {/* QUANTO scommettere */}
+              <div className="bg-yellow-950/20 border border-yellow-800/30 rounded-lg p-4">
+                <h3 className="text-yellow-400 font-bold text-sm mb-2">Quanto scommettere — Gestione bankroll</h3>
+                <div className="space-y-2 text-gray-400">
+                  <p>
+                    Ogni pick ha una <strong className="text-blue-400">Size suggerita</strong> calcolata con il metodo Kelly frazionario (1/4 Kelly).
+                    È la % del tuo bankroll totale da mettere su quel singolo pick.
+                  </p>
+                  <div className="bg-gray-900/60 rounded p-3 mt-2">
+                    <p className="text-white font-semibold mb-1">Esempio con bankroll di $100:</p>
+                    <p>Pick con size suggerita <strong className="text-blue-400">1.5%</strong> → scommetti <strong className="text-white">$1.50</strong></p>
+                    <p>Pick con size suggerita <strong className="text-blue-400">0.8%</strong> → scommetti <strong className="text-white">$0.80</strong></p>
+                    <p className="mt-1 text-gray-500">Totale allocato: ~$2.30 (2.3% del bankroll) su 2 mercati diversi.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                    <div className="bg-green-900/20 rounded p-2 border border-green-800/30">
+                      <span className="text-green-400 font-bold block">Regola #1</span>
+                      <span>Mai più del <strong className="text-white">3%</strong> del bankroll su un singolo pick</span>
+                    </div>
+                    <div className="bg-green-900/20 rounded p-2 border border-green-800/30">
+                      <span className="text-green-400 font-bold block">Regola #2</span>
+                      <span>Mai più del <strong className="text-white">20%</strong> totale su tutti i pick</span>
+                    </div>
+                    <div className="bg-green-900/20 rounded p-2 border border-green-800/30">
+                      <span className="text-green-400 font-bold block">Regola #3</span>
+                      <span>Diversifica su <strong className="text-white">5+ mercati</strong> diversi</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* QUANDO uscire */}
+              <div className="bg-red-950/20 border border-red-800/30 rounded-lg p-4">
+                <h3 className="text-red-400 font-bold text-sm mb-2">Quando uscire da una scommessa</h3>
+                <div className="space-y-2 text-gray-400">
+                  <div className="flex gap-2">
+                    <span className="text-red-400 flex-shrink-0">⚠</span>
+                    <span><strong className="text-white">Alert uscita</strong> — Controlla il tab &quot;Alert uscita&quot;. Se un wallet smart VENDE le sue shares su un mercato dove hai scommesso, considera di vendere anche tu.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-yellow-400 flex-shrink-0">💰</span>
+                    <span><strong className="text-white">Take profit</strong> — Se il prezzo del tuo token è salito molto (es. da $0.02 a $0.10), puoi vendere con profitto senza aspettare la risoluzione. +400% è già un ottimo guadagno.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-gray-500 flex-shrink-0">⏰</span>
+                    <span><strong className="text-white">Scadenza vicina</strong> — Se il mercato sta per chiudersi e il prezzo è ancora basso, valuta se tenere (rischio di perdita totale) o vendere quello che puoi.</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Matematica semplice */}
+              <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-4">
+                <h3 className="text-white font-bold text-sm mb-2">La matematica in breve</h3>
+                <div className="overflow-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-gray-500 border-b border-gray-700">
+                        <th className="py-1 px-2 text-left">Entry</th>
+                        <th className="py-1 px-2 text-right">Se vince</th>
+                        <th className="py-1 px-2 text-right">Se perdi</th>
+                        <th className="py-1 px-2 text-right">Esempio $10</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-gray-300">
+                      <tr className="border-b border-gray-800"><td className="py-1 px-2">$0.01</td><td className="py-1 px-2 text-right text-green-400">+9900%</td><td className="py-1 px-2 text-right text-red-400">-$10</td><td className="py-1 px-2 text-right">Vinci: <strong className="text-green-400">$990</strong></td></tr>
+                      <tr className="border-b border-gray-800"><td className="py-1 px-2">$0.02</td><td className="py-1 px-2 text-right text-green-400">+4900%</td><td className="py-1 px-2 text-right text-red-400">-$10</td><td className="py-1 px-2 text-right">Vinci: <strong className="text-green-400">$490</strong></td></tr>
+                      <tr className="border-b border-gray-800"><td className="py-1 px-2">$0.05</td><td className="py-1 px-2 text-right text-green-400">+1900%</td><td className="py-1 px-2 text-right text-red-400">-$10</td><td className="py-1 px-2 text-right">Vinci: <strong className="text-green-400">$190</strong></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-2 text-gray-500 text-[10px]">
+                  La maggior parte dei pick perderà. Ma quelli che vincono pagano 20-100x.
+                  Su 50 scommesse da $2 a prezzo $0.02, ne vincerai forse 1-3.
+                  1 vittoria = $100 payout su $100 investiti totali = break even o profitto.
+                  Il vantaggio dei wallet smart è che vincono <strong className="text-white">più spesso del caso</strong>.
+                </p>
+              </div>
+            </div>
+          </details>
+        )}
+
         {/* ═══ PORTFOLIO SUMMARY ═══ */}
         {portfolio && !loading && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">

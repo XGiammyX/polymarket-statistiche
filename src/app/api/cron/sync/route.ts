@@ -26,7 +26,50 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
   let statusFinal: "success" | "partial" = "success";
 
   /* ═══════════════════════════════════════════════════
-     A) SYNC MARKETS (Gamma) — batch 200
+     A1) SYNC ACTIVE MARKETS (Gamma, closed=false) — always fetch open markets first
+     ═══════════════════════════════════════════════════ */
+  let activeMarketsFetched = 0;
+  let activeMarketsUpserted = 0;
+
+  try {
+    // Fetch ALL open markets (paginate up to 2000)
+    let activeOffset = 0;
+    const allActive: MarketRow[] = [];
+    for (let page = 0; page < 4; page++) {
+      const result = await fetchMarketsPage({
+        limit: 500,
+        offset: activeOffset,
+        closed: false,
+      });
+      if (result.raw.length === 0) break;
+      activeMarketsFetched += result.raw.length;
+      for (const m of result.normalized) {
+        allActive.push({
+          condition_id: m.condition_id,
+          question: m.question,
+          slug: m.slug,
+          end_date: m.end_date,
+          closed: m.closed,
+          outcomes: m.outcomes,
+          clob_token_ids: m.clob_token_ids,
+        });
+      }
+      activeOffset += result.raw.length;
+      if (result.raw.length < 500) break;
+    }
+    if (allActive.length > 0) {
+      activeMarketsUpserted = await upsertMarkets(allActive);
+    }
+  } catch (err) {
+    console.error(`[sync] active markets error: ${err instanceof Error ? err.message : err}`);
+  }
+
+  console.log(
+    `[sync] rid=${ctx.requestId} active markets: fetched=${activeMarketsFetched} upserted=${activeMarketsUpserted}`
+  );
+
+  /* ═══════════════════════════════════════════════════
+     A2) SYNC HISTORICAL MARKETS (Gamma) — continue paginating all markets
      ═══════════════════════════════════════════════════ */
   const marketsOffset = parseInt(
     await getEtlState("markets_offset", "0"),
@@ -37,38 +80,41 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
   let marketsUpserted = 0;
   let newMarketsOffset = marketsOffset;
 
-  try {
-    const result = await fetchMarketsPage({
-      limit: 500,
-      offset: marketsOffset,
-    });
+  // Only fetch historical if we have time left
+  if (ctx.elapsed() < (TIME_BUDGET_MS - TRADES_RESERVE_MS - 5000)) {
+    try {
+      const result = await fetchMarketsPage({
+        limit: 500,
+        offset: marketsOffset,
+      });
 
-    marketsFetched = result.raw.length;
-    const normalized = result.normalized;
+      marketsFetched = result.raw.length;
+      const normalized = result.normalized;
 
-    if (normalized.length > 0) {
-      const rows: MarketRow[] = normalized.map((m) => ({
-        condition_id: m.condition_id,
-        question: m.question,
-        slug: m.slug,
-        end_date: m.end_date,
-        closed: m.closed,
-        outcomes: m.outcomes,
-        clob_token_ids: m.clob_token_ids,
-      }));
-      marketsUpserted = await upsertMarkets(rows);
+      if (normalized.length > 0) {
+        const rows: MarketRow[] = normalized.map((m) => ({
+          condition_id: m.condition_id,
+          question: m.question,
+          slug: m.slug,
+          end_date: m.end_date,
+          closed: m.closed,
+          outcomes: m.outcomes,
+          clob_token_ids: m.clob_token_ids,
+        }));
+        marketsUpserted = await upsertMarkets(rows);
+      }
+
+      newMarketsOffset = marketsFetched === 0 ? 0 : marketsOffset + marketsFetched;
+      await setEtlState("markets_offset", String(newMarketsOffset));
+    } catch (err) {
+      console.error(
+        `[sync] markets error: ${err instanceof Error ? err.message : err}`
+      );
     }
-
-    newMarketsOffset = marketsFetched === 0 ? 0 : marketsOffset + marketsFetched;
-    await setEtlState("markets_offset", String(newMarketsOffset));
-  } catch (err) {
-    console.error(
-      `[sync] markets error: ${err instanceof Error ? err.message : err}`
-    );
   }
 
   console.log(
-    `[sync] rid=${ctx.requestId} markets: fetched=${marketsFetched} upserted=${marketsUpserted} offset=${newMarketsOffset}`
+    `[sync] rid=${ctx.requestId} historical markets: fetched=${marketsFetched} upserted=${marketsUpserted} offset=${newMarketsOffset}`
   );
 
   // Check if we have time for resolutions, otherwise skip straight to trades
@@ -267,6 +313,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
   return {
     status: statusFinal,
     summary: {
+      activeMarkets: { fetched: activeMarketsFetched, upserted: activeMarketsUpserted },
       markets: { fetched: marketsFetched, upserted: marketsUpserted, newOffset: newMarketsOffset },
       resolutions: { attempted: resolutionsAttempted, inserted: resolutionsInserted },
       backfillRowsCreated,
