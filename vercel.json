@@ -1,13 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/cron/sync",      "schedule": "*/10 * * * *" },
-    { "path": "/api/cron/sync-live",  "schedule": "3-59/10 * * * *" },
-    { "path": "/api/cron/compute",    "schedule": "6-59/10 * * * *" }
+    { "path": "/api/cron/sync",            "schedule": "*/10 * * * *" },
+    { "path": "/api/cron/sync-live",       "schedule": "3-59/10 * * * *" },
+    { "path": "/api/cron/compute",         "schedule": "6-59/10 * * * *" },
+    { "path": "/api/cron/compute-markets", "schedule": "8-59/10 * * * *" }
   ],
   "functions": {
-    "app/api/cron/sync/route.ts":      { "maxDuration": 30 },
-    "app/api/cron/sync-live/route.ts": { "maxDuration": 60 },
-    "app/api/cron/compute/route.ts":   { "maxDuration": 60 }
+    "app/api/cron/sync/route.ts":            { "maxDuration": 30 },
+    "app/api/cron/sync-live/route.ts":       { "maxDuration": 60 },
+    "app/api/cron/compute/route.ts":         { "maxDuration": 60 },
+    "app/api/cron/compute-markets/route.ts": { "maxDuration": 60 }
   }
 }
