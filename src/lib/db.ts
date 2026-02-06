@@ -36,6 +36,7 @@ export interface MarketRow {
   closed: boolean;
   outcomes: unknown;
   clob_token_ids: unknown;
+  outcome_prices?: unknown;
 }
 
 export interface ResolutionRow {
@@ -62,8 +63,8 @@ export interface TradeRow {
 export async function upsertMarkets(markets: MarketRow[]): Promise<number> {
   if (markets.length === 0) return 0;
 
-  // Build multi-row VALUES clause: 9 params per row
-  const COLS = 9;
+  // Build multi-row VALUES clause: 10 params per row
+  const COLS = 10;
   const values: unknown[] = [];
   const placeholders: string[] = [];
 
@@ -71,7 +72,7 @@ export async function upsertMarkets(markets: MarketRow[]): Promise<number> {
     const m = markets[i];
     const off = i * COLS;
     placeholders.push(
-      `($${off + 1},$${off + 2},$${off + 3},$${off + 4},$${off + 5},$${off + 6},$${off + 7},$${off + 8},$${off + 9}, now())`
+      `($${off + 1},$${off + 2},$${off + 3},$${off + 4},$${off + 5},$${off + 6},$${off + 7},$${off + 8},$${off + 9},$${off + 10}, now())`
     );
     values.push(
       m.condition_id,
@@ -82,12 +83,13 @@ export async function upsertMarkets(markets: MarketRow[]): Promise<number> {
       m.end_date,
       m.closed,
       JSON.stringify(m.outcomes),
-      JSON.stringify(m.clob_token_ids)
+      JSON.stringify(m.clob_token_ids),
+      m.outcome_prices ? JSON.stringify(m.outcome_prices) : null
     );
   }
 
   const res = await query(
-    `INSERT INTO markets (condition_id, question, slug, event_slug, group_item_title, end_date, closed, outcomes, clob_token_ids, updated_at)
+    `INSERT INTO markets (condition_id, question, slug, event_slug, group_item_title, end_date, closed, outcomes, clob_token_ids, outcome_prices, updated_at)
      VALUES ${placeholders.join(",")}
      ON CONFLICT (condition_id) DO UPDATE SET
        question           = EXCLUDED.question,
@@ -98,6 +100,7 @@ export async function upsertMarkets(markets: MarketRow[]): Promise<number> {
        closed             = EXCLUDED.closed,
        outcomes           = EXCLUDED.outcomes,
        clob_token_ids     = EXCLUDED.clob_token_ids,
+       outcome_prices     = COALESCE(EXCLUDED.outcome_prices, markets.outcome_prices),
        updated_at         = now()`,
     values
   );

@@ -42,6 +42,7 @@ interface Pick {
   eventSlug: string | null;
   groupItemTitle: string | null;
   endDate: string | null;
+  currentPrice: number | null;
   outcomeName: string;
   trades: TradeEntry[];
   walletCount: number;
@@ -475,17 +476,25 @@ export default function RecommendationsPage() {
                           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
                             <div className="bg-gray-800/50 rounded p-2">
                               <span className="text-gray-500 block text-[10px]">Entry</span>
-                              <span className="text-green-400 font-bold">${p.avgEntryPrice.toFixed(3)}</span>
+                              <span className="text-green-400 font-bold">{p.avgEntryPrice.toFixed(2)}¢</span>
                             </div>
                             <div className="bg-gray-800/50 rounded p-2">
-                              <span className="text-gray-500 block text-[10px]">Se vince</span>
-                              <span className="text-green-400 font-bold">+{p.potentialReturn.toFixed(0)}%</span>
+                              <span className="text-gray-500 block text-[10px]">Prezzo ora</span>
+                              {p.currentPrice != null ? (
+                                <span className={`font-bold ${p.currentPrice > p.avgEntryPrice ? "text-green-400" : p.currentPrice < p.avgEntryPrice ? "text-red-400" : "text-white"}`}>
+                                  {(p.currentPrice * 100).toFixed(1)}¢
+                                  {p.currentPrice > p.avgEntryPrice ? " ↑" : p.currentPrice < p.avgEntryPrice ? " ↓" : ""}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500 font-bold">--</span>
+                              )}
                             </div>
-                            <div className="bg-gray-800/50 rounded p-2">
-                              <span className="text-gray-500 block text-[10px]">EV</span>
-                              <span className={`font-bold ${p.expectedValue > 0 ? "text-green-400" : "text-red-400"}`}>
-                                {p.expectedValue > 0 ? "+" : ""}{(p.expectedValue * 100).toFixed(1)}¢
-                              </span>
+                            <div className={`rounded p-2 ${p.currentPrice != null && p.currentPrice > p.avgEntryPrice ? "bg-green-900/30 border border-green-800/30" : p.currentPrice != null && p.currentPrice < p.avgEntryPrice ? "bg-red-900/30 border border-red-800/30" : "bg-gray-800/50"}`}>
+                              <span className="text-gray-500 block text-[10px]">P/L</span>
+                              {p.currentPrice != null ? (() => {
+                                const pl = ((p.currentPrice - p.avgEntryPrice) / p.avgEntryPrice) * 100;
+                                return <span className={`font-bold ${pl >= 0 ? "text-green-400" : "text-red-400"}`}>{pl >= 0 ? "+" : ""}{pl.toFixed(0)}%</span>;
+                              })() : <span className="text-gray-500 font-bold">--</span>}
                             </div>
                             <div className="bg-gray-800/50 rounded p-2">
                               <span className="text-gray-500 block text-[10px]">Best αZ</span>
@@ -494,8 +503,8 @@ export default function RecommendationsPage() {
                               </span>
                             </div>
                             <div className="bg-gray-800/50 rounded p-2">
-                              <span className="text-gray-500 block text-[10px]">Volume</span>
-                              <span className="text-white font-bold">${p.totalVolume.toFixed(0)}</span>
+                              <span className="text-gray-500 block text-[10px]">Se vince</span>
+                              <span className="text-green-400 font-bold">+{p.potentialReturn.toFixed(0)}%</span>
                             </div>
                             <div className="bg-blue-900/30 rounded p-2 border border-blue-800/30">
                               <span className="text-blue-400 block text-[10px] font-medium">Size suggerita</span>
@@ -576,9 +585,11 @@ export default function RecommendationsPage() {
                               )}
                               <div className="flex flex-wrap gap-3 text-xs text-gray-400">
                                 {!p.groupItemTitle && <span>Compra <strong className="text-yellow-400">{p.outcomeName}</strong></span>}
-                                <span>Entry: <strong className="text-green-400">${p.avgEntryPrice.toFixed(4)}</strong></span>
-                                <span>Rendimento: <strong className="text-green-400">+{p.potentialReturn.toFixed(0)}%</strong></span>
-                                <span>Size: <strong className="text-blue-400">{p.suggestedSizePercent.toFixed(1)}%</strong></span>
+                                <span>Entry: <strong className="text-green-400">{p.avgEntryPrice.toFixed(2)}¢</strong></span>
+                                {p.currentPrice != null && (
+                                  <span>Ora: <strong className={p.currentPrice > p.avgEntryPrice ? "text-green-400" : "text-red-400"}>{(p.currentPrice * 100).toFixed(1)}¢ ({((p.currentPrice - p.avgEntryPrice) / p.avgEntryPrice * 100) >= 0 ? "+" : ""}{((p.currentPrice - p.avgEntryPrice) / p.avgEntryPrice * 100).toFixed(0)}%)</strong></span>
+                                )}
+                                <span>Se vince: <strong className="text-green-400">+{p.potentialReturn.toFixed(0)}%</strong></span>
                                 <span className="text-gray-600">{p.walletCount} wallet</span>
                               </div>
                             </div>

@@ -56,6 +56,18 @@ export function normalizeMarket(raw: GammaMarketRaw): MarketNormalized | null {
   // Extract groupItemTitle (e.g. "Tyler Shough", "Mike Macdonald")
   const groupItemTitle = (raw.groupItemTitle as string) || null;
 
+  // Extract current outcome prices from outcomePrices field
+  let outcomePrices: number[] | null = null;
+  try {
+    const rawPrices = raw.outcomePrices as string | undefined;
+    if (rawPrices) {
+      const parsed = typeof rawPrices === "string" ? JSON.parse(rawPrices) : rawPrices;
+      if (Array.isArray(parsed) && parsed.length === 2) {
+        outcomePrices = parsed.map(Number);
+      }
+    }
+  } catch { /* best effort */ }
+
   return {
     condition_id: conditionId,
     question: raw.question ?? "",
@@ -66,6 +78,7 @@ export function normalizeMarket(raw: GammaMarketRaw): MarketNormalized | null {
     closed: !!raw.closed,
     outcomes,
     clob_token_ids: clobTokenIds,
+    outcome_prices: outcomePrices,
   };
 }
 

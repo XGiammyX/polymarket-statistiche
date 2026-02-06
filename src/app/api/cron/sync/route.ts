@@ -32,10 +32,10 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
   let activeMarketsFetched = 0;
   let activeMarketsUpserted = 0;
 
+  const allActive: MarketRow[] = [];
   try {
     // Fetch ALL open markets (paginate up to 2000)
     let activeOffset = 0;
-    const allActive: MarketRow[] = [];
     for (let page = 0; page < 4; page++) {
       const result = await fetchMarketsPage({
         limit: 500,
@@ -55,6 +55,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
           closed: m.closed,
           outcomes: m.outcomes,
           clob_token_ids: m.clob_token_ids,
+          outcome_prices: m.outcome_prices,
         });
       }
       activeOffset += result.raw.length;
@@ -67,8 +68,25 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
     console.error(`[sync] active markets error: ${err instanceof Error ? err.message : err}`);
   }
 
+  // Mark markets as closed if end_date has passed and they weren't in the active fetch
+  let marketsMarkedClosed = 0;
+  try {
+    const activeIds = allActive.map((m) => m.condition_id);
+    const closeRes = await query(
+      `UPDATE markets SET closed = true, updated_at = now()
+       WHERE closed = false
+         AND end_date IS NOT NULL
+         AND end_date < now()
+         AND ($1::text[] IS NULL OR array_length($1::text[], 1) IS NULL OR condition_id != ALL($1::text[]))`,
+      [activeIds.length > 0 ? activeIds : null]
+    );
+    marketsMarkedClosed = closeRes.rowCount ?? 0;
+  } catch (err) {
+    console.error(`[sync] mark-closed error: ${err instanceof Error ? err.message : err}`);
+  }
+
   console.log(
-    `[sync] rid=${ctx.requestId} active markets: fetched=${activeMarketsFetched} upserted=${activeMarketsUpserted}`
+    `[sync] rid=${ctx.requestId} active markets: fetched=${activeMarketsFetched} upserted=${activeMarketsUpserted} marked_closed=${marketsMarkedClosed}`
   );
 
   /* ═══════════════════════════════════════════════════
@@ -105,6 +123,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
           closed: m.closed,
           outcomes: m.outcomes,
           clob_token_ids: m.clob_token_ids,
+          outcome_prices: m.outcome_prices,
         }));
         marketsUpserted = await upsertMarkets(rows);
       }

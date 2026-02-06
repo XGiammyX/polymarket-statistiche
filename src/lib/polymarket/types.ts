@@ -55,6 +55,7 @@ export interface MarketNormalized {
   closed: boolean;
   outcomes: string[];
   clob_token_ids: string[];
+  outcome_prices: number[] | null;
 }
 
 export interface TradeNormalized {

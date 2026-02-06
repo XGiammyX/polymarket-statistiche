@@ -98,7 +98,8 @@ export async function GET() {
              m.group_item_title,
              m.end_date,
              m.closed,
-             m.outcomes
+             m.outcomes,
+             m.outcome_prices
            FROM trades t
            JOIN markets m ON m.condition_id = t.condition_id
            WHERE t.wallet = ANY($1)
@@ -107,6 +108,8 @@ export async function GET() {
              AND t.price > 0
              AND t.ts >= NOW() - interval '30 days'
              AND (m.closed = false OR m.closed IS NULL)
+             AND m.end_date > NOW() + interval '24 hours'
+             AND m.outcome_prices IS NOT NULL
              AND m.question IS NOT NULL AND m.question != ''
              AND (m.event_slug IS NOT NULL OR m.slug IS NOT NULL)
            ORDER BY t.ts DESC`,
@@ -137,6 +140,7 @@ export async function GET() {
       groupItemTitle: string | null;
       endDate: string | null;
       outcomes: string[] | null;
+      currentPrice: number | null;
       trades: TradeEntry[];
       // Computed
       walletCount: number;
@@ -182,6 +186,16 @@ export async function GET() {
         const outIdx = Number(row.outcome_index);
         const outcomeName = outcomes && outcomes[outIdx] ? outcomes[outIdx] : `Outcome #${outIdx}`;
 
+        // Extract current price for this outcome
+        let currentPrice: number | null = null;
+        try {
+          const rawPrices = row.outcome_prices;
+          const prices = typeof rawPrices === "string" ? JSON.parse(rawPrices) : rawPrices;
+          if (Array.isArray(prices) && prices.length > outIdx) {
+            currentPrice = Number(prices[outIdx]);
+          }
+        } catch { /* ignore */ }
+
         pickMap.set(key, {
           conditionId: row.condition_id as string,
           outcomeIndex: outIdx,
@@ -191,6 +205,7 @@ export async function GET() {
           groupItemTitle: (row.group_item_title as string) || null,
           endDate: row.end_date as string | null,
           outcomes,
+          currentPrice,
           trades: [],
           walletCount: 0,
           followableCount: 0,
