@@ -1,4 +1,4 @@
-export const THRESHOLDS = [0.05, 0.02, 0.01] as const;
+export const THRESHOLDS = [0.15, 0.10, 0.05, 0.02] as const;
 
 export const MIN_N_FOR_FOLLOW = 20;
 

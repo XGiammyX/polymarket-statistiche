@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
        ═══════════════════════════════════════════════════ */
     const profileRes = await query(
       `WITH
-       /* All BUY trades on resolved markets, price <= 0.02 */
+       /* All BUY trades on resolved markets, price <= 0.15 (widened for better coverage) */
        base AS (
          SELECT t.wallet, t.condition_id, t.outcome_index, t.price, t.ts,
                 m.end_date
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
          JOIN resolutions r ON r.condition_id = t.condition_id
          JOIN markets m     ON m.condition_id = t.condition_id
          WHERE t.side = 'BUY'
-           AND t.price <= 0.02
+           AND t.price <= 0.15
            AND t.price > 0
        ),
 
@@ -138,11 +138,15 @@ export async function POST(req: NextRequest) {
          GROUP BY wallet
        ),
 
-       /* wallet_stats at threshold=0.02 */
-       stats_02 AS (
-         SELECT wallet, n AS n_02, alphaz AS alphaz_02
+       /* Best αZ across ALL thresholds per wallet */
+       best_stats AS (
+         SELECT DISTINCT ON (wallet)
+           wallet,
+           n AS n_02,
+           alphaz AS alphaz_02
          FROM wallet_stats
-         WHERE threshold = 0.02
+         WHERE n >= 3
+         ORDER BY wallet, alphaz DESC
        ),
 
        /* Combine everything */
@@ -168,7 +172,7 @@ export async function POST(req: NextRequest) {
              THEN EXP(-LN(2.0) * EXTRACT(EPOCH FROM (now() - lc.last_trade_at)) / 86400.0 / $3)
              ELSE 0
            END AS recency_factor
-         FROM stats_02 s
+         FROM best_stats s
          LEFT JOIN hedge_cte h  ON h.wallet = s.wallet
          LEFT JOIN late_cte l   ON l.wallet = s.wallet
          LEFT JOIN last_cte lc  ON lc.wallet = s.wallet

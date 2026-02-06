@@ -238,7 +238,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
   let tradesCompleted = 0;
 
   try {
-    const batch = await pickTradeBackfillBatch(25);
+    const batch = await pickTradeBackfillBatch(40);
 
     for (const item of batch) {
       if (ctx.elapsed() > TIME_BUDGET_MS) {
