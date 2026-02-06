@@ -105,6 +105,8 @@ export async function GET() {
              AND t.price > 0
              AND t.ts >= NOW() - interval '30 days'
              AND (m.closed = false OR m.closed IS NULL)
+             AND m.question IS NOT NULL AND m.question != ''
+             AND m.slug IS NOT NULL AND m.slug != ''
            ORDER BY t.ts DESC`,
           [smartWalletAddrs]
         )
@@ -263,6 +265,9 @@ export async function GET() {
       return b.convergenceScore - a.convergenceScore;
     });
 
+    // Filter out picks with missing data
+    const cleanPicks = picks.filter((p) => p.question && p.slug);
+
     // ═══ STEP 5: Detect position exits (wallet sold recently) ═══
     // Find trades where smart wallets SOLD in last 7 days
     const exitsRes = smartWalletAddrs.length > 0
@@ -304,26 +309,26 @@ export async function GET() {
     }));
 
     // ═══ STEP 6: Portfolio summary ═══
-    const highConf = picks.filter((p) => p.confidence === "ALTA");
-    const medConf = picks.filter((p) => p.confidence === "MEDIA");
-    const totalSuggested = picks.reduce((s, p) => s + p.suggestedSizePercent, 0);
+    const highConf = cleanPicks.filter((p) => p.confidence === "ALTA");
+    const medConf = cleanPicks.filter((p) => p.confidence === "MEDIA");
+    const totalSuggested = cleanPicks.reduce((s, p) => s + p.suggestedSizePercent, 0);
 
     const portfolio = {
-      totalPicks: picks.length,
+      totalPicks: cleanPicks.length,
       highConfidence: highConf.length,
       mediumConfidence: medConf.length,
-      lowConfidence: picks.length - highConf.length - medConf.length,
-      totalSuggestedAllocation: Math.min(totalSuggested, 20), // cap at 20% of bankroll
-      uniqueMarkets: new Set(picks.map((p) => p.conditionId)).size,
-      avgPotentialReturn: picks.length > 0 ? picks.reduce((s, p) => s + p.potentialReturn, 0) / picks.length : 0,
-      avgExpectedValue: picks.length > 0 ? picks.reduce((s, p) => s + p.expectedValue, 0) / picks.length : 0,
+      lowConfidence: cleanPicks.length - highConf.length - medConf.length,
+      totalSuggestedAllocation: Math.min(totalSuggested, 20),
+      uniqueMarkets: new Set(cleanPicks.map((p) => p.conditionId)).size,
+      avgPotentialReturn: cleanPicks.length > 0 ? cleanPicks.reduce((s, p) => s + p.potentialReturn, 0) / cleanPicks.length : 0,
+      avgExpectedValue: cleanPicks.length > 0 ? cleanPicks.reduce((s, p) => s + p.expectedValue, 0) / cleanPicks.length : 0,
     };
 
     const lastComputeAt = await getEtlState("last_compute_at", "");
     const lastSyncAt = await getEtlState("last_sync_at", "");
 
     const durationMs = Date.now() - start;
-    console.log(`[/api/smart-picks] requestId=${requestId} wallets=${smartWallets.length} picks=${picks.length} exits=${exitAlerts.length} durationMs=${durationMs}`);
+    console.log(`[/api/smart-picks] requestId=${requestId} wallets=${smartWallets.length} picks=${cleanPicks.length} exits=${exitAlerts.length} durationMs=${durationMs}`);
 
     return NextResponse.json({
       ok: true,
@@ -332,8 +337,8 @@ export async function GET() {
       lastComputeAt: lastComputeAt || null,
       lastSyncAt: lastSyncAt || null,
       smartWallets,
-      picks: picks.slice(0, 20),
-      exitAlerts,
+      picks: cleanPicks.slice(0, 20),
+      exitAlerts: exitAlerts.filter((e) => e.question),
       portfolio,
     }, {
       headers: {
