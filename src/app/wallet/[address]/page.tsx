@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 interface Profile {
   followScore: number;
@@ -103,21 +104,17 @@ export default function WalletPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
-      <header className="border-b border-gray-800 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold hover:text-blue-400">
-            Polymarket Statistiche
-          </Link>
-          <Link href="/" className="text-sm text-gray-400 hover:text-gray-200">
-            Leaderboard
-          </Link>
-        </div>
-      </header>
-
+      <Navbar />
       <main className="max-w-5xl mx-auto px-6 py-6">
-        <h2 className="text-lg font-semibold mb-1 font-mono break-all">
-          {address}
-        </h2>
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-1">Dettaglio Wallet</h2>
+          <p className="text-sm text-gray-400 mb-2">
+            Profilo, statistiche per soglia, vittorie improbabili, posizioni aperte e scommesse recenti.
+          </p>
+          <p className="text-xs font-mono text-gray-500 break-all bg-gray-900 rounded px-3 py-2">
+            {address}
+          </p>
+        </div>
 
         {loading && <p className="text-gray-500 text-sm mt-4">Loading...</p>}
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 interface LeaderboardItem {
   wallet: string;
@@ -62,93 +63,62 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/health")
       .then((r) => r.json())
-      .then((j) => {
-        if (j.ok) setHealth(j);
-      })
+      .then((j) => { if (j.ok) setHealth(j); })
       .catch(() => {});
   }, []);
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
-      <header className="border-b border-gray-800 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-xl font-bold">Polymarket Statistiche</h1>
-          <div className="flex gap-3 text-sm">
-            <Link href="/signals" className="text-gray-400 hover:text-gray-200">
-              Signals
-            </Link>
-            <Link href="/positions" className="text-gray-400 hover:text-gray-200">
-              Positions
-            </Link>
-            <Link href="/debug" className="text-gray-400 hover:text-gray-200">
-              Debug
-            </Link>
-            <Link
-              href="/api/health"
-              className="text-gray-400 hover:text-gray-200"
-            >
-              Health
-            </Link>
-          </div>
-        </div>
-      </header>
-
+      <Navbar />
       <main className="max-w-7xl mx-auto px-6 py-6">
+        {/* Page description */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-1">Leaderboard</h2>
+          <p className="text-sm text-gray-400">
+            Classifica dei wallet che piazzano scommesse a bassa probabilità su Polymarket.
+            I wallet sono ordinati per <strong>Follow Score</strong>, che misura la capacità
+            di vincere scommesse improbabili. Clicca su un wallet per i dettagli.
+          </p>
+        </div>
+
         {/* Health summary */}
         {health && (
-          <div className="flex flex-wrap gap-4 mb-6 text-xs text-gray-500">
-            <span>
-              Markets: <strong className="text-gray-300">{health.counts.markets}</strong>
-            </span>
-            <span>
-              Resolutions: <strong className="text-gray-300">{health.counts.resolutions}</strong>
-            </span>
-            <span>
-              Trades: <strong className="text-gray-300">{health.counts.trades.toLocaleString()}</strong>
-            </span>
-            <span>
-              Backlog: <strong className="text-gray-300">{health.backlog.pending}</strong>
-            </span>
+          <div className="flex flex-wrap gap-3 mb-5">
+            {[
+              { label: "Markets", value: health.counts.markets },
+              { label: "Resolutions", value: health.counts.resolutions },
+              { label: "Trades", value: health.counts.trades.toLocaleString() },
+              { label: "Backlog", value: health.backlog.pending },
+            ].map((s) => (
+              <span key={s.label} className="bg-gray-900 rounded-md px-3 py-1.5 text-xs text-gray-400">
+                {s.label}: <strong className="text-gray-200">{s.value}</strong>
+              </span>
+            ))}
             {health.lastComputeAt && (
-              <span>
-                Last compute:{" "}
-                <strong className="text-gray-300">
-                  {new Date(health.lastComputeAt).toLocaleString()}
-                </strong>
+              <span className="bg-gray-900 rounded-md px-3 py-1.5 text-xs text-gray-400">
+                Ultimo compute: <strong className="text-gray-200">{new Date(health.lastComputeAt).toLocaleString()}</strong>
               </span>
             )}
           </div>
         )}
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-end mb-5">
+        <div className="flex flex-wrap gap-3 items-end mb-5 bg-gray-900/50 rounded-lg p-4">
           <label className="flex flex-col text-sm">
             <span className="text-gray-400 mb-1">Threshold</span>
-            <select
-              className="bg-gray-800 rounded px-3 py-1.5 text-sm"
-              value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
-            >
-              <option value="0.05">0.05</option>
-              <option value="0.02">0.02</option>
-              <option value="0.01">0.01</option>
+            <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={threshold} onChange={(e) => setThreshold(e.target.value)}>
+              <option value="0.05">≤ 0.05</option>
+              <option value="0.02">≤ 0.02</option>
+              <option value="0.01">≤ 0.01</option>
             </select>
           </label>
           <label className="flex flex-col text-sm">
             <span className="text-gray-400 mb-1">Min N</span>
-            <input
-              className="bg-gray-800 rounded px-3 py-1.5 w-20 text-sm"
-              value={minN}
-              onChange={(e) => setMinN(e.target.value)}
-            />
+            <input className="bg-gray-800 rounded px-3 py-1.5 w-20 text-sm" value={minN} onChange={(e) => setMinN(e.target.value)} />
           </label>
           <label className="flex flex-col text-sm">
-            <span className="text-gray-400 mb-1">Sort</span>
-            <select
-              className="bg-gray-800 rounded px-3 py-1.5 text-sm"
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-            >
+            <span className="text-gray-400 mb-1">Ordina per</span>
+            <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="followScore">Follow Score</option>
               <option value="alphaz">Alpha Z</option>
               <option value="wins">Wins</option>
@@ -156,94 +126,65 @@ export default function Home() {
             </select>
           </label>
           <label className="flex items-center gap-2 text-sm cursor-pointer pt-5">
-            <input
-              type="checkbox"
-              className="accent-blue-500"
-              checked={onlyFollowable}
-              onChange={(e) => setOnlyFollowable(e.target.checked)}
-            />
+            <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
             <span className="text-gray-400">Solo Followable</span>
           </label>
         </div>
 
         {updatedAt && (
           <p className="text-xs text-gray-600 mb-3">
-            Last compute: {new Date(updatedAt).toLocaleString()} — {items.length} results
+            Ultimo aggiornamento: {new Date(updatedAt).toLocaleString()} — {items.length} risultati
           </p>
         )}
 
-        {/* Error */}
         {error && (
-          <div className="bg-red-950 border border-red-800 text-red-300 rounded p-3 text-sm mb-4">
-            {error}
-          </div>
+          <div className="bg-red-950 border border-red-800 text-red-300 rounded p-3 text-sm mb-4">{error}</div>
         )}
 
-        {/* Table */}
         {loading ? (
-          <p className="text-gray-500 text-sm">Loading...</p>
+          <div className="flex justify-center py-12">
+            <div className="animate-pulse text-gray-500 text-sm">Caricamento...</div>
+          </div>
         ) : items.length === 0 ? (
-          <p className="text-gray-500 text-sm">
-            Nessun risultato. Esegui sync + compute prima.
-          </p>
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-sm">Nessun risultato. Esegui sync + compute dall&apos;admin panel.</p>
+          </div>
         ) : (
-          <div className="overflow-auto">
+          <div className="overflow-auto rounded-lg border border-gray-800">
             <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-gray-950">
-                <tr className="text-left text-gray-400 border-b border-gray-800">
-                  <th className="py-2 px-2">#</th>
-                  <th className="py-2 px-2">Wallet</th>
-                  <th className="py-2 px-2 text-right">Follow</th>
-                  <th className="py-2 px-2 text-center">OK</th>
-                  <th className="py-2 px-2 text-right">N</th>
-                  <th className="py-2 px-2 text-right">Wins</th>
-                  <th className="py-2 px-2 text-right">AlphaZ</th>
-                  <th className="py-2 px-2 text-right">Hedge%</th>
-                  <th className="py-2 px-2 text-right">Late%</th>
-                  <th className="py-2 px-2">Last Trade</th>
+              <thead>
+                <tr className="text-left text-gray-400 bg-gray-900/80 border-b border-gray-800">
+                  <th className="py-2.5 px-3">#</th>
+                  <th className="py-2.5 px-3">Wallet</th>
+                  <th className="py-2.5 px-3 text-right">Follow Score</th>
+                  <th className="py-2.5 px-3 text-center">Followable</th>
+                  <th className="py-2.5 px-3 text-right">N</th>
+                  <th className="py-2.5 px-3 text-right">Wins</th>
+                  <th className="py-2.5 px-3 text-right">AlphaZ</th>
+                  <th className="py-2.5 px-3 text-right">Hedge%</th>
+                  <th className="py-2.5 px-3 text-right">Late%</th>
+                  <th className="py-2.5 px-3">Last Trade</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, i) => (
-                  <tr
-                    key={item.wallet}
-                    className="border-b border-gray-800/50 hover:bg-gray-800/30"
-                  >
-                    <td className="py-1.5 px-2 text-gray-600">{i + 1}</td>
-                    <td className="py-1.5 px-2 font-mono">
-                      <Link
-                        href={`/wallet/${item.wallet}`}
-                        className="text-blue-400 hover:underline"
-                      >
+                  <tr key={item.wallet} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                    <td className="py-2 px-3 text-gray-600">{i + 1}</td>
+                    <td className="py-2 px-3 font-mono">
+                      <Link href={`/wallet/${item.wallet}`} className="text-blue-400 hover:underline">
                         {item.wallet.slice(0, 6)}...{item.wallet.slice(-4)}
                       </Link>
                     </td>
-                    <td className="py-1.5 px-2 text-right font-semibold text-blue-400">
-                      {Number(item.followScore).toFixed(1)}
+                    <td className="py-2 px-3 text-right font-semibold text-blue-400">{Number(item.followScore).toFixed(1)}</td>
+                    <td className="py-2 px-3 text-center">
+                      {item.isFollowable ? <span className="text-green-400 font-medium">✓</span> : <span className="text-gray-600">—</span>}
                     </td>
-                    <td className="py-1.5 px-2 text-center">
-                      {item.isFollowable ? (
-                        <span className="text-green-400">Y</span>
-                      ) : (
-                        <span className="text-gray-600">N</span>
-                      )}
-                    </td>
-                    <td className="py-1.5 px-2 text-right">{item.n}</td>
-                    <td className="py-1.5 px-2 text-right">{item.wins}</td>
-                    <td className="py-1.5 px-2 text-right">
-                      {Number(item.alphaz).toFixed(2)}
-                    </td>
-                    <td className="py-1.5 px-2 text-right">
-                      {(Number(item.hedgeRate) * 100).toFixed(1)}%
-                    </td>
-                    <td className="py-1.5 px-2 text-right">
-                      {(Number(item.lateSnipingRate) * 100).toFixed(1)}%
-                    </td>
-                    <td className="py-1.5 px-2 text-gray-500">
-                      {item.lastTradeAt
-                        ? new Date(item.lastTradeAt).toLocaleDateString()
-                        : "—"}
-                    </td>
+                    <td className="py-2 px-3 text-right">{item.n}</td>
+                    <td className="py-2 px-3 text-right">{item.wins}</td>
+                    <td className="py-2 px-3 text-right">{Number(item.alphaz).toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right">{(Number(item.hedgeRate) * 100).toFixed(1)}%</td>
+                    <td className="py-2 px-3 text-right">{(Number(item.lateSnipingRate) * 100).toFixed(1)}%</td>
+                    <td className="py-2 px-3 text-gray-500">{item.lastTradeAt ? new Date(item.lastTradeAt).toLocaleDateString() : "—"}</td>
                   </tr>
                 ))}
               </tbody>

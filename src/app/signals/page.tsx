@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 interface Signal {
   wallet: string;
@@ -33,9 +34,7 @@ export default function SignalsPage() {
     setError(null);
     try {
       const params = new URLSearchParams({
-        threshold,
-        hours,
-        limit: "200",
+        threshold, hours, limit: "200",
         onlyFollowable: onlyFollowable ? "true" : "false",
         activeOnly: activeOnly ? "true" : "false",
       });
@@ -51,200 +50,120 @@ export default function SignalsPage() {
     }
   }, [threshold, hours, onlyFollowable, activeOnly]);
 
-  useEffect(() => {
-    fetchSignals();
-  }, [fetchSignals]);
+  useEffect(() => { fetchSignals(); }, [fetchSignals]);
 
   function timeAgo(iso: string): string {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 60) return `${mins}m fa`;
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
+    if (hrs < 24) return `${hrs}h fa`;
+    return `${Math.floor(hrs / 24)}g fa`;
   }
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
-      <header className="border-b border-gray-800 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold hover:text-blue-400">
-            Polymarket Statistiche
-          </Link>
-          <div className="flex gap-3 text-sm">
-            <Link href="/" className="text-gray-400 hover:text-gray-200">
-              Leaderboard
-            </Link>
-            <Link href="/signals" className="text-blue-400 font-semibold">
-              Signals
-            </Link>
-            <Link href="/positions" className="text-gray-400 hover:text-gray-200">
-              Positions
-            </Link>
-          </div>
-        </div>
-      </header>
-
+      <Navbar />
       <main className="max-w-7xl mx-auto px-6 py-6">
-        <h2 className="text-lg font-bold mb-1">Live Signals</h2>
-        <p className="text-xs text-gray-500 mb-4">
-          Recent low-probability BUY trades from followable wallets.
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-1">Segnali Live</h2>
+          <p className="text-sm text-gray-400">
+            Scommesse BUY a bassa probabilità piazzate di recente da wallet affidabili.
+            Se &quot;Solo Attivi&quot; è selezionato, vengono mostrati solo i segnali dove
+            il wallet ha ancora una posizione aperta (net shares &gt; 0).
+          </p>
           {lastSync && (
-            <> Last live sync: <strong className="text-gray-400">{new Date(lastSync).toLocaleString()}</strong></>
+            <p className="text-xs text-gray-500 mt-1">
+              Ultimo sync live: <strong className="text-gray-400">{new Date(lastSync).toLocaleString()}</strong>
+            </p>
           )}
-        </p>
+        </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-end mb-5">
+        <div className="flex flex-wrap gap-3 items-end mb-5 bg-gray-900/50 rounded-lg p-4">
           <label className="flex flex-col text-sm">
-            <span className="text-gray-400 mb-1">Threshold</span>
-            <select
-              className="bg-gray-800 rounded px-3 py-1.5 text-sm"
-              value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
-            >
-              <option value="0.05">0.05</option>
-              <option value="0.02">0.02</option>
-              <option value="0.01">0.01</option>
+            <span className="text-gray-400 mb-1">Soglia prezzo</span>
+            <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={threshold} onChange={(e) => setThreshold(e.target.value)}>
+              <option value="0.05">≤ 0.05</option>
+              <option value="0.02">≤ 0.02</option>
+              <option value="0.01">≤ 0.01</option>
             </select>
           </label>
           <label className="flex flex-col text-sm">
-            <span className="text-gray-400 mb-1">Timeframe</span>
-            <select
-              className="bg-gray-800 rounded px-3 py-1.5 text-sm"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
-            >
+            <span className="text-gray-400 mb-1">Periodo</span>
+            <select className="bg-gray-800 rounded px-3 py-1.5 text-sm" value={hours} onChange={(e) => setHours(e.target.value)}>
               <option value="24">24h</option>
               <option value="72">72h</option>
-              <option value="168">7d</option>
+              <option value="168">7 giorni</option>
             </select>
           </label>
           <label className="flex items-center gap-2 text-sm cursor-pointer pt-5">
-            <input
-              type="checkbox"
-              className="accent-blue-500"
-              checked={onlyFollowable}
-              onChange={(e) => setOnlyFollowable(e.target.checked)}
-            />
+            <input type="checkbox" className="accent-blue-500" checked={onlyFollowable} onChange={(e) => setOnlyFollowable(e.target.checked)} />
             <span className="text-gray-400">Solo Followable</span>
           </label>
           <label className="flex items-center gap-2 text-sm cursor-pointer pt-5">
-            <input
-              type="checkbox"
-              className="accent-green-500"
-              checked={activeOnly}
-              onChange={(e) => setActiveOnly(e.target.checked)}
-            />
-            <span className="text-gray-400">Solo Attivi (posizione aperta)</span>
+            <input type="checkbox" className="accent-green-500" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />
+            <span className="text-gray-400">Solo Attivi</span>
           </label>
         </div>
 
         {error && (
-          <div className="bg-red-950 border border-red-800 text-red-300 rounded p-3 text-sm mb-4">
-            {error}
-          </div>
+          <div className="bg-red-950 border border-red-800 text-red-300 rounded p-3 text-sm mb-4">{error}</div>
         )}
 
         {loading ? (
-          <p className="text-gray-500 text-sm">Loading...</p>
+          <div className="flex justify-center py-12">
+            <div className="animate-pulse text-gray-500 text-sm">Caricamento...</div>
+          </div>
         ) : signals.length === 0 ? (
-          <p className="text-gray-500 text-sm">
-            Nessun segnale trovato. Esegui sync-live prima.
-          </p>
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-sm">Nessun segnale trovato. Esegui sync-live dall&apos;admin panel.</p>
+          </div>
         ) : (
-          <div className="overflow-auto">
+          <div className="overflow-auto rounded-lg border border-gray-800">
             <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-gray-950">
-                <tr className="text-left text-gray-400 border-b border-gray-800">
-                  <th className="py-2 px-2">When</th>
-                  <th className="py-2 px-2">Wallet</th>
-                  <th className="py-2 px-2 text-right">Entry</th>
-                  <th className="py-2 px-2 text-right">Now</th>
-                  <th className="py-2 px-2 text-right">Size</th>
-                  <th className="py-2 px-2 text-right">Shares</th>
-                  <th className="py-2 px-2">Market</th>
-                  <th className="py-2 px-2 text-center">Status</th>
-                  <th className="py-2 px-2"></th>
+              <thead>
+                <tr className="text-left text-gray-400 bg-gray-900/80 border-b border-gray-800">
+                  <th className="py-2.5 px-3">Quando</th>
+                  <th className="py-2.5 px-3">Wallet</th>
+                  <th className="py-2.5 px-3 text-right">Entry</th>
+                  <th className="py-2.5 px-3 text-right">Prezzo att.</th>
+                  <th className="py-2.5 px-3 text-right">Size</th>
+                  <th className="py-2.5 px-3 text-right">Shares</th>
+                  <th className="py-2.5 px-3">Mercato</th>
+                  <th className="py-2.5 px-3"></th>
                 </tr>
               </thead>
               <tbody>
                 {signals.map((s, i) => {
-                  const delta =
-                    s.currentPrice != null
-                      ? s.currentPrice - Number(s.entryPrice)
-                      : null;
+                  const delta = s.currentPrice != null ? s.currentPrice - Number(s.entryPrice) : null;
                   return (
-                    <tr
-                      key={`${s.conditionId}-${s.wallet}-${i}`}
-                      className="border-b border-gray-800/50 hover:bg-gray-800/30"
-                    >
-                      <td className="py-1.5 px-2 text-gray-400 whitespace-nowrap">
-                        <span title={new Date(s.ts).toLocaleString()}>
-                          {timeAgo(s.ts)}
-                        </span>
+                    <tr key={`${s.conditionId}-${s.wallet}-${i}`} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                      <td className="py-2 px-3 text-gray-400 whitespace-nowrap">
+                        <span title={new Date(s.ts).toLocaleString()}>{timeAgo(s.ts)}</span>
                       </td>
-                      <td className="py-1.5 px-2 font-mono">
-                        <Link
-                          href={`/wallet/${s.wallet}`}
-                          className="text-blue-400 hover:underline"
-                        >
+                      <td className="py-2 px-3 font-mono">
+                        <Link href={`/wallet/${s.wallet}`} className="text-blue-400 hover:underline">
                           {s.wallet.slice(0, 6)}...{s.wallet.slice(-4)}
                         </Link>
                       </td>
-                      <td className="py-1.5 px-2 text-right text-green-400 font-semibold">
-                        {Number(s.entryPrice).toFixed(4)}
-                      </td>
-                      <td className="py-1.5 px-2 text-right">
+                      <td className="py-2 px-3 text-right text-green-400 font-semibold">{Number(s.entryPrice).toFixed(4)}</td>
+                      <td className="py-2 px-3 text-right">
                         {s.currentPrice != null ? (
-                          <span
-                            className={
-                              delta != null && delta > 0
-                                ? "text-green-400"
-                                : delta != null && delta < 0
-                                ? "text-red-400"
-                                : "text-yellow-400"
-                            }
-                          >
+                          <span className={delta != null && delta > 0 ? "text-green-400" : delta != null && delta < 0 ? "text-red-400" : "text-yellow-400"}>
                             {Number(s.currentPrice).toFixed(4)}
-                            {delta != null && (
-                              <span className="text-[10px] ml-0.5">
-                                ({delta > 0 ? "+" : ""}
-                                {delta.toFixed(3)})
-                              </span>
-                            )}
+                            {delta != null && <span className="text-[10px] ml-0.5">({delta > 0 ? "+" : ""}{delta.toFixed(3)})</span>}
                           </span>
-                        ) : (
-                          <span className="text-gray-600">—</span>
-                        )}
+                        ) : <span className="text-gray-600">—</span>}
                       </td>
-                      <td className="py-1.5 px-2 text-right">
-                        {Number(s.size).toFixed(2)}
-                      </td>
-                      <td className="py-1.5 px-2 text-right text-gray-400">
-                        {s.netShares != null
-                          ? Number(s.netShares).toFixed(2)
-                          : "—"}
-                      </td>
-                      <td className="py-1.5 px-2 max-w-xs truncate">
-                        {s.question || s.conditionId.slice(0, 16) + "..."}
-                      </td>
-                      <td className="py-1.5 px-2 text-center">
-                        {s.closed ? (
-                          <span className="text-gray-500">Closed</span>
-                        ) : (
-                          <span className="text-yellow-400">Open</span>
-                        )}
-                      </td>
-                      <td className="py-1.5 px-2">
+                      <td className="py-2 px-3 text-right">{Number(s.size).toFixed(2)}</td>
+                      <td className="py-2 px-3 text-right text-gray-400">{s.netShares != null ? Number(s.netShares).toFixed(2) : "—"}</td>
+                      <td className="py-2 px-3 max-w-xs truncate">{s.question || s.conditionId.slice(0, 16) + "..."}</td>
+                      <td className="py-2 px-3">
                         {s.slug && (
-                          <a
-                            href={`https://polymarket.com/market/${s.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline text-[10px]"
-                          >
-                            Open
+                          <a href={`https://polymarket.com/market/${s.slug}`} target="_blank" rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline text-[10px] bg-blue-500/10 px-2 py-0.5 rounded">
+                            Polymarket ↗
                           </a>
                         )}
                       </td>

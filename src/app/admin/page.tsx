@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 interface StatusData {
   counts: { markets: number; resolutions: number; trades: number };
@@ -94,16 +94,15 @@ export default function AdminPage() {
         <meta name="robots" content="noindex, nofollow" />
       </head>
       <div className="min-h-screen bg-gray-950 text-gray-100">
-        <header className="border-b border-gray-800 px-6 py-4">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <h1 className="text-xl font-bold">Admin Panel</h1>
-            <Link href="/" className="text-sm text-gray-400 hover:text-gray-200">
-              Leaderboard
-            </Link>
-          </div>
-        </header>
-
+        <Navbar />
         <main className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+          <div>
+            <h2 className="text-xl font-bold mb-1">Admin Panel</h2>
+            <p className="text-sm text-gray-400">
+              Gestione ETL: trigger sync/compute manualmente, monitoraggio stato, log esecuzioni.
+              Inserisci l&apos;Admin Secret per autenticarti.
+            </p>
+          </div>
           {/* Secret input */}
           <div className="flex items-end gap-3">
             <label className="flex flex-col text-sm">
@@ -127,6 +126,12 @@ export default function AdminPage() {
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-3">
+            <a
+              href="/admin/watchlist"
+              className="bg-gray-700 hover:bg-gray-600 px-4 py-1.5 rounded text-sm font-medium"
+            >
+              Watchlist →
+            </a>
             <button
               className="bg-green-700 hover:bg-green-600 px-4 py-1.5 rounded text-sm font-medium disabled:opacity-50"
               onClick={() => runAction("/api/admin/run-sync", "sync")}

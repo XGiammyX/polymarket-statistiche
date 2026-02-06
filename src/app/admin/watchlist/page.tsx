@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 interface WatchlistItem {
   wallet: string;
@@ -123,24 +124,15 @@ export default function WatchlistPage() {
         <meta name="robots" content="noindex, nofollow" />
       </head>
       <div className="min-h-screen bg-gray-950 text-gray-100">
-        <header className="border-b border-gray-800 px-6 py-4">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <h1 className="text-xl font-bold">Watchlist Admin</h1>
-            <div className="flex gap-3 text-sm">
-              <Link href="/admin" className="text-gray-400 hover:text-gray-200">
-                Admin
-              </Link>
-              <Link href="/signals" className="text-gray-400 hover:text-gray-200">
-                Signals
-              </Link>
-              <Link href="/" className="text-gray-400 hover:text-gray-200">
-                Leaderboard
-              </Link>
-            </div>
-          </div>
-        </header>
-
+        <Navbar />
         <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+          <div>
+            <h2 className="text-xl font-bold mb-1">Watchlist</h2>
+            <p className="text-sm text-gray-400">
+              Gestione wallet monitorati manualmente. I wallet in watchlist vengono inclusi nel sync-live
+              insieme ai wallet followable. Puoi aggiungere/rimuovere wallet e forzare un sync live.
+            </p>
+          </div>
           {/* Secret */}
           <div className="flex items-end gap-3">
             <label className="flex flex-col text-sm">
