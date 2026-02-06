@@ -4,14 +4,28 @@ import { getDatabaseUrl } from "./env";
 /* ── Global Pool (reused across Vercel invocations) ── */
 const globalForPg = globalThis as unknown as { _pgPool?: Pool };
 
+function parseConnectionUrl(raw: string) {
+  const u = new URL(raw);
+  return {
+    host: u.hostname,
+    port: Number(u.port) || 5432,
+    database: u.pathname.replace(/^\//, ""),
+    user: decodeURIComponent(u.username),
+    password: decodeURIComponent(u.password),
+    ssl: u.searchParams.get("sslmode") === "require" || u.searchParams.get("sslmode") === "verify-full"
+      ? { rejectUnauthorized: false }
+      : true,
+  };
+}
+
 function getPool(): Pool {
   if (!globalForPg._pgPool) {
+    const connParams = parseConnectionUrl(getDatabaseUrl());
     globalForPg._pgPool = new Pool({
-      connectionString: getDatabaseUrl(),
-      max: 3,                       // Vercel serverless: keep low to avoid Neon connection limits
-      idleTimeoutMillis: 10_000,    // Release idle connections fast (saves Neon compute)
+      ...connParams,
+      max: 3,
+      idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 5_000,
-      ssl: true,
     });
   }
   return globalForPg._pgPool;
