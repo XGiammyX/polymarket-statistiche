@@ -40,6 +40,7 @@ interface Pick {
   question: string;
   slug: string;
   eventSlug: string | null;
+  groupItemTitle: string | null;
   endDate: string | null;
   outcomeName: string;
   trades: TradeEntry[];
@@ -399,7 +400,7 @@ export default function RecommendationsPage() {
                           <button
                             onClick={() => {
                               const lines = picks.filter((p) => p.eventSlug || p.slug).map((p, i) =>
-                                `${i + 1}. ${p.question || "Mercato"}\n   Compra: ${p.outcomeName}\n   Entry: $${p.avgEntryPrice.toFixed(4)} → Se vince: +${p.potentialReturn.toFixed(0)}% | EV: ${p.expectedValue > 0 ? "+" : ""}${(p.expectedValue * 100).toFixed(1)}¢ | Size: ${p.suggestedSizePercent.toFixed(1)}%\n   ${p.walletCount} wallet (best αZ ${p.maxAlphaZ.toFixed(1)})\n   https://polymarket.com/event/${p.eventSlug || p.slug}\n`
+                                `${i + 1}. ${p.question || "Mercato"}${p.groupItemTitle ? `\n   👉 Cerca "${p.groupItemTitle}" → Compra ${p.outcomeName}` : `\n   Compra: ${p.outcomeName}`}\n   Entry: $${p.avgEntryPrice.toFixed(4)} → Se vince: +${p.potentialReturn.toFixed(0)}% | EV: ${p.expectedValue > 0 ? "+" : ""}${(p.expectedValue * 100).toFixed(1)}¢ | Size: ${p.suggestedSizePercent.toFixed(1)}%\n   ${p.walletCount} wallet (best αZ ${p.maxAlphaZ.toFixed(1)})\n   https://polymarket.com/event/${p.eventSlug || p.slug}\n`
                               );
                               navigator.clipboard.writeText(lines.join("\n")).then(() => {
                                 setCopied(true);
@@ -442,8 +443,20 @@ export default function RecommendationsPage() {
                                 )}
                               </div>
                               <h3 className="text-sm font-semibold text-white">{p.question || p.conditionId.slice(0, 30)}</h3>
-                              <p className="text-[10px] text-gray-500 mt-0.5">
-                                Compra <strong className="text-yellow-400">{p.outcomeName}</strong> — ultimo trade {timeAgo(p.latestTrade)}
+                              {p.groupItemTitle && (
+                                <div className="mt-1 bg-yellow-500/10 border border-yellow-500/30 rounded px-2 py-1 inline-block">
+                                  <span className="text-[11px] text-yellow-300 font-bold">
+                                    👉 Cerca &quot;{p.groupItemTitle}&quot; → Compra {p.outcomeName}
+                                  </span>
+                                </div>
+                              )}
+                              {!p.groupItemTitle && (
+                                <p className="text-[10px] text-gray-500 mt-0.5">
+                                  Compra <strong className="text-yellow-400">{p.outcomeName}</strong>
+                                </p>
+                              )}
+                              <p className="text-[10px] text-gray-600 mt-0.5">
+                                Ultimo trade {timeAgo(p.latestTrade)}
                               </p>
                             </div>
                             {(p.eventSlug || p.slug) && (
@@ -511,7 +524,7 @@ export default function RecommendationsPage() {
             {/* ═══ TAB: COPY ═══ */}
             {tab === "picks" && (
               <div className="space-y-4">
-                {picks.filter((p) => p.slug).length === 0 ? (
+                {picks.filter((p) => p.eventSlug || p.slug).length === 0 ? (
                   <div className="text-center py-16"><p className="text-gray-500 text-sm">Nessun pick con link disponibile.</p></div>
                 ) : (
                   <>
@@ -519,13 +532,13 @@ export default function RecommendationsPage() {
                       <div className="flex items-center justify-between mb-3">
                         <div>
                           <h3 className="text-white font-semibold text-sm">Copia tutte le scommesse</h3>
-                          <p className="text-gray-400 text-xs mt-0.5">{picks.filter((p) => p.slug).length} mercati con link diretto</p>
+                          <p className="text-gray-400 text-xs mt-0.5">{picks.filter((p) => p.eventSlug || p.slug).length} mercati con link diretto</p>
                         </div>
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
                               const lines = picks.filter((p) => p.eventSlug || p.slug).map((p, i) =>
-                                `${i + 1}. ${p.question}\n   Compra: ${p.outcomeName} (Outcome #${p.outcomeIndex})\n   Entry: $${p.avgEntryPrice.toFixed(4)} — Se vince: +${p.potentialReturn.toFixed(0)}% — EV: ${p.expectedValue > 0 ? "+" : ""}${(p.expectedValue * 100).toFixed(1)}¢\n   Fiducia: ${p.confidence} — ${p.walletCount} wallet — Size: ${p.suggestedSizePercent.toFixed(1)}% bankroll\n   Link: https://polymarket.com/event/${p.eventSlug || p.slug}\n`
+                                `${i + 1}. ${p.question}${p.groupItemTitle ? `\n   👉 Cerca "${p.groupItemTitle}" → Compra ${p.outcomeName}` : `\n   Compra: ${p.outcomeName}`}\n   Entry: $${p.avgEntryPrice.toFixed(4)} — Se vince: +${p.potentialReturn.toFixed(0)}% — EV: ${p.expectedValue > 0 ? "+" : ""}${(p.expectedValue * 100).toFixed(1)}¢\n   Fiducia: ${p.confidence} — ${p.walletCount} wallet — Size: ${p.suggestedSizePercent.toFixed(1)}% bankroll\n   Link: https://polymarket.com/event/${p.eventSlug || p.slug}\n`
                               );
                               navigator.clipboard.writeText(lines.join("\n")).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
                             }}
@@ -543,7 +556,7 @@ export default function RecommendationsPage() {
                       </div>
                     </div>
 
-                    {picks.filter((p) => p.slug).map((p, i) => {
+                    {picks.filter((p) => p.eventSlug || p.slug).map((p, i) => {
                       const cc = confColor[p.confidence];
                       return (
                         <div key={`copy-${p.conditionId}-${i}`} className="rounded-lg border bg-gray-900/60 border-gray-800 p-3">
@@ -554,8 +567,15 @@ export default function RecommendationsPage() {
                                 <span className={`text-[9px] px-1.5 py-0.5 rounded border font-bold ${cc.bg} ${cc.text}`}>{p.confidence}</span>
                                 <h4 className="text-sm text-white font-medium truncate">{p.question}</h4>
                               </div>
+                              {p.groupItemTitle && (
+                                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded px-2 py-0.5 inline-block mb-1">
+                                  <span className="text-[10px] text-yellow-300 font-bold">
+                                    👉 Cerca &quot;{p.groupItemTitle}&quot; → Compra {p.outcomeName}
+                                  </span>
+                                </div>
+                              )}
                               <div className="flex flex-wrap gap-3 text-xs text-gray-400">
-                                <span>Compra <strong className="text-yellow-400">{p.outcomeName}</strong></span>
+                                {!p.groupItemTitle && <span>Compra <strong className="text-yellow-400">{p.outcomeName}</strong></span>}
                                 <span>Entry: <strong className="text-green-400">${p.avgEntryPrice.toFixed(4)}</strong></span>
                                 <span>Rendimento: <strong className="text-green-400">+{p.potentialReturn.toFixed(0)}%</strong></span>
                                 <span>Size: <strong className="text-blue-400">{p.suggestedSizePercent.toFixed(1)}%</strong></span>

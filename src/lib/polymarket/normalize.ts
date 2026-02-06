@@ -53,11 +53,15 @@ export function normalizeMarket(raw: GammaMarketRaw): MarketNormalized | null {
     }
   } catch { /* best effort */ }
 
+  // Extract groupItemTitle (e.g. "Tyler Shough", "Mike Macdonald")
+  const groupItemTitle = (raw.groupItemTitle as string) || null;
+
   return {
     condition_id: conditionId,
     question: raw.question ?? "",
     slug: raw.slug ?? "",
     event_slug: eventSlug,
+    group_item_title: groupItemTitle,
     end_date: endDate,
     closed: !!raw.closed,
     outcomes,

@@ -31,6 +31,7 @@ export interface MarketRow {
   question: string | null;
   slug: string | null;
   event_slug?: string | null;
+  group_item_title?: string | null;
   end_date: string | null;
   closed: boolean;
   outcomes: unknown;
@@ -61,8 +62,8 @@ export interface TradeRow {
 export async function upsertMarkets(markets: MarketRow[]): Promise<number> {
   if (markets.length === 0) return 0;
 
-  // Build multi-row VALUES clause: 8 params per row
-  const COLS = 8;
+  // Build multi-row VALUES clause: 9 params per row
+  const COLS = 9;
   const values: unknown[] = [];
   const placeholders: string[] = [];
 
@@ -70,13 +71,14 @@ export async function upsertMarkets(markets: MarketRow[]): Promise<number> {
     const m = markets[i];
     const off = i * COLS;
     placeholders.push(
-      `($${off + 1},$${off + 2},$${off + 3},$${off + 4},$${off + 5},$${off + 6},$${off + 7},$${off + 8}, now())`
+      `($${off + 1},$${off + 2},$${off + 3},$${off + 4},$${off + 5},$${off + 6},$${off + 7},$${off + 8},$${off + 9}, now())`
     );
     values.push(
       m.condition_id,
       m.question,
       m.slug,
       m.event_slug ?? null,
+      m.group_item_title ?? null,
       m.end_date,
       m.closed,
       JSON.stringify(m.outcomes),
@@ -85,17 +87,18 @@ export async function upsertMarkets(markets: MarketRow[]): Promise<number> {
   }
 
   const res = await query(
-    `INSERT INTO markets (condition_id, question, slug, event_slug, end_date, closed, outcomes, clob_token_ids, updated_at)
+    `INSERT INTO markets (condition_id, question, slug, event_slug, group_item_title, end_date, closed, outcomes, clob_token_ids, updated_at)
      VALUES ${placeholders.join(",")}
      ON CONFLICT (condition_id) DO UPDATE SET
-       question       = EXCLUDED.question,
-       slug           = EXCLUDED.slug,
-       event_slug     = COALESCE(EXCLUDED.event_slug, markets.event_slug),
-       end_date       = EXCLUDED.end_date,
-       closed         = EXCLUDED.closed,
-       outcomes       = EXCLUDED.outcomes,
-       clob_token_ids = EXCLUDED.clob_token_ids,
-       updated_at     = now()`,
+       question           = EXCLUDED.question,
+       slug               = EXCLUDED.slug,
+       event_slug         = COALESCE(EXCLUDED.event_slug, markets.event_slug),
+       group_item_title   = COALESCE(EXCLUDED.group_item_title, markets.group_item_title),
+       end_date           = EXCLUDED.end_date,
+       closed             = EXCLUDED.closed,
+       outcomes           = EXCLUDED.outcomes,
+       clob_token_ids     = EXCLUDED.clob_token_ids,
+       updated_at         = now()`,
     values
   );
   return res.rowCount ?? 0;

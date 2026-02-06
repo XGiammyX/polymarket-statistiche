@@ -95,6 +95,7 @@ export async function GET() {
              m.question,
              m.slug,
              m.event_slug,
+             m.group_item_title,
              m.end_date,
              m.closed,
              m.outcomes
@@ -133,6 +134,7 @@ export async function GET() {
       question: string;
       slug: string;
       eventSlug: string | null;
+      groupItemTitle: string | null;
       endDate: string | null;
       outcomes: string[] | null;
       trades: TradeEntry[];
@@ -186,6 +188,7 @@ export async function GET() {
           question: (row.question as string) || "",
           slug: (row.slug as string) || "",
           eventSlug: (row.event_slug as string) || null,
+          groupItemTitle: (row.group_item_title as string) || null,
           endDate: row.end_date as string | null,
           outcomes,
           trades: [],
