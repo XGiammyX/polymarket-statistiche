@@ -15,7 +15,7 @@ export const EPS = 1e-9;
 export const DEFAULT_CONFIDENCE_NO_DATA = 10;
 
 // Batch size for cron
-export const BATCH_SIZE = 50;
+export const BATCH_SIZE = 200;
 
 // Cron lock key
 export const LOCK_KEY = 9004;

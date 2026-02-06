@@ -330,29 +330,33 @@ export async function computeAdviceForMarket(
   };
 }
 
-/* ── Upsert advice cache ── */
+/* ── Upsert advice cache — tracks trend via prev_p_model_yes ── */
 export async function upsertMarketAdvice(a: MarketAdvice): Promise<void> {
   await query(
     `INSERT INTO market_advice
        (condition_id, p_mkt_yes, p_model_yes, confidence, p_low, p_high,
         net_yes_shares, net_no_shares, net_yes_cost, net_no_cost,
-        flow_yes_cost, flow_no_cost, top_drivers, top_wallets, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,now())
+        flow_yes_cost, flow_no_cost, top_drivers, top_wallets,
+        prev_p_model_yes, trend, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
+             NULL, NULL, now())
      ON CONFLICT (condition_id) DO UPDATE SET
-       p_mkt_yes      = EXCLUDED.p_mkt_yes,
-       p_model_yes    = EXCLUDED.p_model_yes,
-       confidence     = EXCLUDED.confidence,
-       p_low          = EXCLUDED.p_low,
-       p_high         = EXCLUDED.p_high,
-       net_yes_shares = EXCLUDED.net_yes_shares,
-       net_no_shares  = EXCLUDED.net_no_shares,
-       net_yes_cost   = EXCLUDED.net_yes_cost,
-       net_no_cost    = EXCLUDED.net_no_cost,
-       flow_yes_cost  = EXCLUDED.flow_yes_cost,
-       flow_no_cost   = EXCLUDED.flow_no_cost,
-       top_drivers    = EXCLUDED.top_drivers,
-       top_wallets    = EXCLUDED.top_wallets,
-       updated_at     = now()`,
+       prev_p_model_yes = market_advice.p_model_yes,
+       trend            = EXCLUDED.p_model_yes - market_advice.p_model_yes,
+       p_mkt_yes        = EXCLUDED.p_mkt_yes,
+       p_model_yes      = EXCLUDED.p_model_yes,
+       confidence       = EXCLUDED.confidence,
+       p_low            = EXCLUDED.p_low,
+       p_high           = EXCLUDED.p_high,
+       net_yes_shares   = EXCLUDED.net_yes_shares,
+       net_no_shares    = EXCLUDED.net_no_shares,
+       net_yes_cost     = EXCLUDED.net_yes_cost,
+       net_no_cost      = EXCLUDED.net_no_cost,
+       flow_yes_cost    = EXCLUDED.flow_yes_cost,
+       flow_no_cost     = EXCLUDED.flow_no_cost,
+       top_drivers      = EXCLUDED.top_drivers,
+       top_wallets      = EXCLUDED.top_wallets,
+       updated_at       = now()`,
     [
       a.conditionId,
       a.pMktYes,
@@ -362,8 +366,8 @@ export async function upsertMarketAdvice(a: MarketAdvice): Promise<void> {
       a.pHigh,
       a.netYesShares,
       a.netNoShares,
-      a.flowYesCost,   // net_yes_cost = flow yes for now
-      a.flowNoCost,    // net_no_cost = flow no for now
+      a.flowYesCost,
+      a.flowNoCost,
       a.flowYesCost,
       a.flowNoCost,
       JSON.stringify(a.topDrivers),

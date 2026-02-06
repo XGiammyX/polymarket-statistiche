@@ -80,6 +80,8 @@ function formatRow(row: Record<string, unknown>) {
     confidence: Number(row.confidence),
     pLow: Number(row.p_low),
     pHigh: Number(row.p_high),
+    edge: Number(row.edge) || 0,
+    trend: row.trend != null ? Number(row.trend) : null,
     recommendedSide: pModelYes >= 0.5 ? "YES" : "NO",
     recommendedProb: Math.max(pModelYes, pModelNo),
     netYesShares: Number(row.net_yes_shares),

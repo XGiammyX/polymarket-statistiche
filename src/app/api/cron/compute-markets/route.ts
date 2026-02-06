@@ -10,41 +10,38 @@ export const dynamic = "force-dynamic";
 const TIME_BUDGET_MS = 55_000;
 
 async function computeMarketsHandler(ctx: CronContext): Promise<CronResult> {
-  /* Select binary markets prioritizing those with followable wallet activity */
+  /* Select binary markets with JOIN-based scoring — no correlated subqueries */
   const candidatesRes = await query(
-    `WITH scored AS (
-       SELECT m.condition_id,
-         COALESCE((
-           SELECT SUM(ABS(wp.net_shares) * COALESCE(pr.follow_score, 0))
-           FROM wallet_positions wp
-           LEFT JOIN wallet_profiles pr ON pr.wallet = wp.wallet
-           WHERE wp.condition_id = m.condition_id AND wp.net_shares != 0
-         ), 0) AS pos_signal,
-         COALESCE((
-           SELECT COUNT(*)
-           FROM trades t
-           WHERE t.condition_id = m.condition_id AND t.ts >= now() - interval '7 days'
-         ), 0) AS recent_trades
-       FROM markets m
-       WHERE (m.closed = false OR m.closed IS NULL)
-         AND m.outcomes IS NOT NULL
-         AND jsonb_array_length(m.outcomes::jsonb) = 2
-         AND m.question IS NOT NULL AND m.question != ''
-         AND (
-           EXISTS (
-             SELECT 1 FROM wallet_positions wp
-             JOIN wallet_profiles pr ON pr.wallet = wp.wallet
-             WHERE wp.condition_id = m.condition_id AND wp.net_shares != 0
-               AND (pr.is_followable = true OR pr.follow_score > 5)
-           )
-           OR EXISTS (
-             SELECT 1 FROM trades t
-             WHERE t.condition_id = m.condition_id AND t.ts >= now() - interval '3 days'
-           )
-         )
-     )
-     SELECT condition_id FROM scored
-     ORDER BY pos_signal DESC, recent_trades DESC
+    `SELECT m.condition_id,
+       COALESCE(ps.pos_signal, 0) AS pos_signal,
+       COALESCE(tr.recent_trades, 0) AS recent_trades,
+       COALESCE(tr.recent_wallets, 0) AS recent_wallets
+     FROM markets m
+     LEFT JOIN (
+       SELECT wp.condition_id,
+         SUM(ABS(wp.net_shares) *
+           LEAST(GREATEST(COALESCE(pr.follow_score,0)/100.0, 0.01), 1) *
+           LEAST(GREATEST((COALESCE(pr.alphaz_02,0)+1.0)/6.0, 0.01), 1)
+         ) AS pos_signal
+       FROM wallet_positions wp
+       LEFT JOIN wallet_profiles pr ON pr.wallet = wp.wallet
+       WHERE wp.net_shares != 0
+       GROUP BY wp.condition_id
+     ) ps ON ps.condition_id = m.condition_id
+     LEFT JOIN (
+       SELECT t.condition_id,
+         COUNT(*) AS recent_trades,
+         COUNT(DISTINCT t.wallet) AS recent_wallets
+       FROM trades t
+       WHERE t.ts >= now() - interval '7 days'
+       GROUP BY t.condition_id
+     ) tr ON tr.condition_id = m.condition_id
+     WHERE (m.closed = false OR m.closed IS NULL)
+       AND m.outcomes IS NOT NULL
+       AND jsonb_array_length(m.outcomes::jsonb) = 2
+       AND m.question IS NOT NULL AND m.question != ''
+       AND (ps.pos_signal > 0 OR tr.recent_trades > 0)
+     ORDER BY ps.pos_signal DESC, tr.recent_wallets DESC, tr.recent_trades DESC
      LIMIT $1`,
     [BATCH_SIZE]
   );

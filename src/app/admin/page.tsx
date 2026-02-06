@@ -124,6 +124,11 @@ export default function AdminPage() {
                 dei mercati a 0 per ri-scaricare tutti i mercati da capo. Utile se ci sono stati
                 problemi di sync.
               </div>
+              <div className="bg-gray-900/60 rounded p-2.5">
+                <strong className="text-gray-300">Run Compute Markets</strong> — Calcola le analisi
+                statistiche (probabilità YES/NO, edge, confidence) per i top 200 mercati binari
+                con attività wallet. Popola la pagina Analisi.
+              </div>
             </div>
           </div>
           {/* Secret input */}
@@ -175,6 +180,13 @@ export default function AdminPage() {
               disabled={!secret || loading !== null}
             >
               {loading === "reset" ? "Resetting..." : "Reset Market Offset"}
+            </button>
+            <button
+              className="bg-amber-700 hover:bg-amber-600 px-4 py-1.5 rounded text-sm font-medium disabled:opacity-50"
+              onClick={() => runAction("/api/admin/run-compute-markets", "compute-markets")}
+              disabled={!secret || loading !== null}
+            >
+              {loading === "compute-markets" ? "Computing..." : "Run Compute Markets"}
             </button>
           </div>
 

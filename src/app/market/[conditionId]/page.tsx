@@ -36,6 +36,8 @@ interface Advice {
   confidence: number;
   pLow: number;
   pHigh: number;
+  edge: number;
+  trend: number | null;
   recommendedSide: string;
   recommendedProb: number;
   netYesShares: number;
@@ -160,6 +162,43 @@ export default function MarketDetailPage() {
         </div>
       </div>
 
+      {/* ── Edge & Trend cards ── */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className={`rounded-xl border p-4 text-center ${
+          Math.abs(advice.edge) > 0.05 ? "bg-amber-950/20 border-amber-800/30" : "bg-gray-800/30 border-gray-700/20"
+        }`}>
+          <span className="text-gray-500 block text-[10px] mb-1">Edge (modello vs mercato)</span>
+          <span className={`font-bold text-2xl ${
+            Math.abs(advice.edge) > 0.10 ? "text-amber-400" : Math.abs(advice.edge) > 0.05 ? "text-amber-400/80" : "text-gray-400"
+          }`}>
+            {advice.edge >= 0 ? "+" : ""}{(advice.edge * 100).toFixed(2)}pp
+          </span>
+          {Math.abs(advice.edge) > 0.05 && (
+            <span className="block text-[10px] text-amber-400/60 mt-1">
+              {advice.edge > 0 ? "Modello più rialzista del mercato" : "Modello più ribassista del mercato"}
+            </span>
+          )}
+        </div>
+        <div className="rounded-xl border bg-gray-800/30 border-gray-700/20 p-4 text-center">
+          <span className="text-gray-500 block text-[10px] mb-1">Trend (vs calcolo precedente)</span>
+          {advice.trend != null ? (
+            <>
+              <span className={`font-bold text-2xl ${
+                advice.trend > 0.02 ? "text-green-400" : advice.trend > 0.005 ? "text-green-400/70" :
+                advice.trend < -0.02 ? "text-red-400" : advice.trend < -0.005 ? "text-red-400/70" : "text-gray-400"
+              }`}>
+                {advice.trend >= 0 ? "+" : ""}{(advice.trend * 100).toFixed(2)}pp
+              </span>
+              <span className="block text-[10px] text-gray-500 mt-1">
+                {advice.trend > 0.005 ? "Probabilità YES in aumento" : advice.trend < -0.005 ? "Probabilità YES in calo" : "Stabile"}
+              </span>
+            </>
+          ) : (
+            <span className="text-gray-500 text-lg">—</span>
+          )}
+        </div>
+      </div>
+
       {/* ── Comparison: market vs model ── */}
       <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 mb-6">
         <h2 className="text-sm font-semibold text-gray-400 mb-3">Confronto prezzo mercato vs modello</h2>
@@ -169,8 +208,8 @@ export default function MarketDetailPage() {
             <span className="text-white font-bold text-lg">{pct(advice.pMktYes)}%</span>
           </div>
           <div>
-            <span className="text-gray-500 block text-[10px]">Δ modello</span>
-            <span className={`font-bold text-lg ${shift > 0.01 ? "text-green-400" : shift < -0.01 ? "text-red-400" : "text-gray-400"}`}>
+            <span className="text-gray-500 block text-[10px]">Edge</span>
+            <span className={`font-bold text-lg ${shift > 0.01 ? "text-amber-400" : shift < -0.01 ? "text-red-400" : "text-gray-400"}`}>
               {shift >= 0 ? "+" : ""}{(shift * 100).toFixed(2)}pp
             </span>
           </div>
