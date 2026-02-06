@@ -56,35 +56,46 @@ export interface TradeRow {
   tx_hash: string | null;
 }
 
-/* ── Upsert Markets ── */
+/* ── Upsert Markets (batched multi-row for Vercel/Neon perf) ── */
 export async function upsertMarkets(markets: MarketRow[]): Promise<number> {
   if (markets.length === 0) return 0;
-  let count = 0;
-  for (const m of markets) {
-    const res = await query(
-      `INSERT INTO markets (condition_id, question, slug, end_date, closed, outcomes, clob_token_ids, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7, now())
-       ON CONFLICT (condition_id) DO UPDATE SET
-         question       = EXCLUDED.question,
-         slug           = EXCLUDED.slug,
-         end_date       = EXCLUDED.end_date,
-         closed         = EXCLUDED.closed,
-         outcomes       = EXCLUDED.outcomes,
-         clob_token_ids = EXCLUDED.clob_token_ids,
-         updated_at     = now()`,
-      [
-        m.condition_id,
-        m.question,
-        m.slug,
-        m.end_date,
-        m.closed,
-        JSON.stringify(m.outcomes),
-        JSON.stringify(m.clob_token_ids),
-      ]
+
+  // Build multi-row VALUES clause: 7 params per row
+  const COLS = 7;
+  const values: unknown[] = [];
+  const placeholders: string[] = [];
+
+  for (let i = 0; i < markets.length; i++) {
+    const m = markets[i];
+    const off = i * COLS;
+    placeholders.push(
+      `($${off + 1},$${off + 2},$${off + 3},$${off + 4},$${off + 5},$${off + 6},$${off + 7}, now())`
     );
-    count += res.rowCount ?? 0;
+    values.push(
+      m.condition_id,
+      m.question,
+      m.slug,
+      m.end_date,
+      m.closed,
+      JSON.stringify(m.outcomes),
+      JSON.stringify(m.clob_token_ids)
+    );
   }
-  return count;
+
+  const res = await query(
+    `INSERT INTO markets (condition_id, question, slug, end_date, closed, outcomes, clob_token_ids, updated_at)
+     VALUES ${placeholders.join(",")}
+     ON CONFLICT (condition_id) DO UPDATE SET
+       question       = EXCLUDED.question,
+       slug           = EXCLUDED.slug,
+       end_date       = EXCLUDED.end_date,
+       closed         = EXCLUDED.closed,
+       outcomes       = EXCLUDED.outcomes,
+       clob_token_ids = EXCLUDED.clob_token_ids,
+       updated_at     = now()`,
+    values
+  );
+  return res.rowCount ?? 0;
 }
 
 /* ── Upsert Resolution ── */
@@ -101,32 +112,30 @@ export async function upsertResolution(r: ResolutionRow): Promise<number> {
   return res.rowCount ?? 0;
 }
 
-/* ── Insert Trades (dedup via ON CONFLICT DO NOTHING) ── */
+/* ── Insert Trades (batched multi-row, dedup via ON CONFLICT DO NOTHING) ── */
 export async function insertTrades(trades: TradeRow[]): Promise<number> {
   if (trades.length === 0) return 0;
-  let count = 0;
-  for (const t of trades) {
-    const res = await query(
-      `INSERT INTO trades (pk, ts, wallet, condition_id, side, price, size, outcome, outcome_index, asset, tx_hash)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-       ON CONFLICT (pk) DO NOTHING`,
-      [
-        t.pk,
-        t.ts,
-        t.wallet,
-        t.condition_id,
-        t.side,
-        t.price,
-        t.size,
-        t.outcome,
-        t.outcome_index,
-        t.asset,
-        t.tx_hash,
-      ]
+
+  const COLS = 11;
+  const values: unknown[] = [];
+  const placeholders: string[] = [];
+
+  for (let i = 0; i < trades.length; i++) {
+    const t = trades[i];
+    const off = i * COLS;
+    placeholders.push(
+      `($${off+1},$${off+2},$${off+3},$${off+4},$${off+5},$${off+6},$${off+7},$${off+8},$${off+9},$${off+10},$${off+11})`
     );
-    count += res.rowCount ?? 0;
+    values.push(t.pk, t.ts, t.wallet, t.condition_id, t.side, t.price, t.size, t.outcome, t.outcome_index, t.asset, t.tx_hash);
   }
-  return count;
+
+  const res = await query(
+    `INSERT INTO trades (pk, ts, wallet, condition_id, side, price, size, outcome, outcome_index, asset, tx_hash)
+     VALUES ${placeholders.join(",")}
+     ON CONFLICT (pk) DO NOTHING`,
+    values
+  );
+  return res.rowCount ?? 0;
 }
 
 /* ── Insert Trades returning which rows were actually inserted ── */
@@ -134,25 +143,31 @@ export async function insertTradesReturningInserted(
   trades: TradeRow[]
 ): Promise<{ count: number; insertedRows: TradeRow[] }> {
   if (trades.length === 0) return { count: 0, insertedRows: [] };
-  let count = 0;
-  const insertedRows: TradeRow[] = [];
-  for (const t of trades) {
-    const res = await query(
-      `INSERT INTO trades (pk, ts, wallet, condition_id, side, price, size, outcome, outcome_index, asset, tx_hash)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-       ON CONFLICT (pk) DO NOTHING`,
-      [
-        t.pk, t.ts, t.wallet, t.condition_id, t.side,
-        t.price, t.size, t.outcome, t.outcome_index, t.asset, t.tx_hash,
-      ]
+
+  const COLS = 11;
+  const values: unknown[] = [];
+  const placeholders: string[] = [];
+
+  for (let i = 0; i < trades.length; i++) {
+    const t = trades[i];
+    const off = i * COLS;
+    placeholders.push(
+      `($${off+1},$${off+2},$${off+3},$${off+4},$${off+5},$${off+6},$${off+7},$${off+8},$${off+9},$${off+10},$${off+11})`
     );
-    const inserted = res.rowCount ?? 0;
-    if (inserted > 0) {
-      count += inserted;
-      insertedRows.push(t);
-    }
+    values.push(t.pk, t.ts, t.wallet, t.condition_id, t.side, t.price, t.size, t.outcome, t.outcome_index, t.asset, t.tx_hash);
   }
-  return { count, insertedRows };
+
+  const res = await query(
+    `INSERT INTO trades (pk, ts, wallet, condition_id, side, price, size, outcome, outcome_index, asset, tx_hash)
+     VALUES ${placeholders.join(",")}
+     ON CONFLICT (pk) DO NOTHING
+     RETURNING pk`,
+    values
+  );
+
+  const insertedPks = new Set((res.rows as Array<{ pk: string }>).map((r) => r.pk));
+  const insertedRows = trades.filter((t) => insertedPks.has(t.pk));
+  return { count: insertedPks.size, insertedRows };
 }
 
 /* ── Ensure Market Placeholder (for live trades on unknown markets) ── */
@@ -198,9 +213,10 @@ export async function ensureTradeBackfillRowsForResolvedMarkets(
     `INSERT INTO trade_backfill (condition_id, next_offset, done)
      SELECT r.condition_id, 0, false
      FROM resolutions r
-     WHERE NOT EXISTS (
-       SELECT 1 FROM trade_backfill tb WHERE tb.condition_id = r.condition_id
-     )
+     WHERE r.winning_token_id IS NOT NULL
+       AND NOT EXISTS (
+         SELECT 1 FROM trade_backfill tb WHERE tb.condition_id = r.condition_id
+       )
      LIMIT $1
      ON CONFLICT (condition_id) DO NOTHING`,
     [limit]

@@ -20,7 +20,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const TIME_BUDGET_MS = 25_000;
-const TRADES_RESERVE_MS = 10_000; // reserve at least 10s for trades
+const TRADES_RESERVE_MS = 8_000; // reserve at least 8s for trades
 
 async function syncHandler(ctx: CronContext): Promise<CronResult> {
   let statusFinal: "success" | "partial" = "success";
@@ -39,7 +39,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
 
   try {
     const result = await fetchMarketsPage({
-      limit: 200,
+      limit: 500,
       offset: marketsOffset,
     });
 
@@ -59,7 +59,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
       marketsUpserted = await upsertMarkets(rows);
     }
 
-    newMarketsOffset = marketsFetched === 0 ? 0 : marketsOffset + 200;
+    newMarketsOffset = marketsFetched === 0 ? 0 : marketsOffset + marketsFetched;
     await setEtlState("markets_offset", String(newMarketsOffset));
   } catch (err) {
     console.error(
@@ -90,7 +90,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
              SELECT 1 FROM resolutions r WHERE r.condition_id = m.condition_id
            )
          ORDER BY m.end_date DESC NULLS LAST
-         LIMIT 15`
+         LIMIT 25`
       );
 
       const unresolvedMarkets = unresolvedRes.rows as Array<{
@@ -182,7 +182,7 @@ async function syncHandler(ctx: CronContext): Promise<CronResult> {
   let tradesCompleted = 0;
 
   try {
-    const batch = await pickTradeBackfillBatch(10);
+    const batch = await pickTradeBackfillBatch(15);
 
     for (const item of batch) {
       if (ctx.elapsed() > TIME_BUDGET_MS) {

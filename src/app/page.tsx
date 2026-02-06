@@ -10,6 +10,7 @@ interface LeaderboardItem {
   isFollowable: boolean;
   n: number;
   wins: number;
+  expectedWins: number;
   alphaz: number;
   hedgeRate: number;
   lateSnipingRate: number;
@@ -24,7 +25,7 @@ interface HealthData {
 
 export default function Home() {
   const [threshold, setThreshold] = useState("0.02");
-  const [minN, setMinN] = useState("20");
+  const [minN, setMinN] = useState("1");
   const [onlyFollowable, setOnlyFollowable] = useState(false);
   const [sort, setSort] = useState("followScore");
   const [items, setItems] = useState<LeaderboardItem[]>([]);
@@ -167,7 +168,8 @@ export default function Home() {
           </div>
         ) : items.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-sm">Nessun risultato. Esegui sync + compute dall&apos;admin panel.</p>
+            <p className="text-gray-500 text-sm">Nessun wallet trovato con questi filtri.</p>
+            <p className="text-gray-600 text-xs mt-1">Prova ad abbassare il valore di &quot;Min N&quot; o vai al pannello admin per eseguire sync + compute.</p>
           </div>
         ) : (
           <div className="overflow-auto rounded-lg border border-gray-800">
@@ -180,6 +182,7 @@ export default function Home() {
                   <th className="py-2.5 px-3 text-center">Followable</th>
                   <th className="py-2.5 px-3 text-right">N</th>
                   <th className="py-2.5 px-3 text-right">Wins</th>
+                  <th className="py-2.5 px-3 text-right">E[Wins]</th>
                   <th className="py-2.5 px-3 text-right">AlphaZ</th>
                   <th className="py-2.5 px-3 text-right">Hedge%</th>
                   <th className="py-2.5 px-3 text-right">Late%</th>
@@ -201,7 +204,8 @@ export default function Home() {
                     </td>
                     <td className="py-2 px-3 text-right">{item.n}</td>
                     <td className="py-2 px-3 text-right">{item.wins}</td>
-                    <td className="py-2 px-3 text-right">{Number(item.alphaz).toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right text-gray-500">{Number(item.expectedWins).toFixed(2)}</td>
+                    <td className={`py-2 px-3 text-right font-medium ${Number(item.alphaz) > 0 ? 'text-green-400' : Number(item.alphaz) < -1 ? 'text-red-400' : ''}`}>{Number(item.alphaz).toFixed(2)}</td>
                     <td className="py-2 px-3 text-right">{(Number(item.hedgeRate) * 100).toFixed(1)}%</td>
                     <td className="py-2 px-3 text-right">{(Number(item.lateSnipingRate) * 100).toFixed(1)}%</td>
                     <td className="py-2 px-3 text-gray-500">{item.lastTradeAt ? new Date(item.lastTradeAt).toLocaleDateString() : "—"}</td>
