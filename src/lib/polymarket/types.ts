@@ -49,6 +49,7 @@ export interface MarketNormalized {
   condition_id: string;
   question: string;
   slug: string;
+  event_slug: string | null;
   end_date: string | null;
   closed: boolean;
   outcomes: string[];

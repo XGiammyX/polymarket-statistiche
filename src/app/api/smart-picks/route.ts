@@ -94,6 +94,7 @@ export async function GET() {
              t.outcome_index,
              m.question,
              m.slug,
+             m.event_slug,
              m.end_date,
              m.closed,
              m.outcomes
@@ -106,7 +107,7 @@ export async function GET() {
              AND t.ts >= NOW() - interval '30 days'
              AND (m.closed = false OR m.closed IS NULL)
              AND m.question IS NOT NULL AND m.question != ''
-             AND m.slug IS NOT NULL AND m.slug != ''
+             AND (m.event_slug IS NOT NULL OR m.slug IS NOT NULL)
            ORDER BY t.ts DESC`,
           [smartWalletAddrs]
         )
@@ -131,6 +132,7 @@ export async function GET() {
       outcomeIndex: number;
       question: string;
       slug: string;
+      eventSlug: string | null;
       endDate: string | null;
       outcomes: string[] | null;
       trades: TradeEntry[];
@@ -183,6 +185,7 @@ export async function GET() {
           outcomeIndex: outIdx,
           question: (row.question as string) || "",
           slug: (row.slug as string) || "",
+          eventSlug: (row.event_slug as string) || null,
           endDate: row.end_date as string | null,
           outcomes,
           trades: [],

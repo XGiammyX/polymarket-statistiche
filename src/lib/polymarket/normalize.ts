@@ -44,10 +44,20 @@ export function normalizeMarket(raw: GammaMarketRaw): MarketNormalized | null {
     return null;
   }
 
+  // Extract event slug from raw.events[0].slug if available
+  let eventSlug: string | null = null;
+  try {
+    const events = raw.events as Array<{ slug?: string }> | undefined;
+    if (Array.isArray(events) && events.length > 0 && events[0]?.slug) {
+      eventSlug = events[0].slug;
+    }
+  } catch { /* best effort */ }
+
   return {
     condition_id: conditionId,
     question: raw.question ?? "",
     slug: raw.slug ?? "",
+    event_slug: eventSlug,
     end_date: endDate,
     closed: !!raw.closed,
     outcomes,

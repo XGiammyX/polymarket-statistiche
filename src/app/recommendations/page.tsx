@@ -39,6 +39,7 @@ interface Pick {
   outcomeIndex: number;
   question: string;
   slug: string;
+  eventSlug: string | null;
   endDate: string | null;
   outcomeName: string;
   trades: TradeEntry[];
@@ -368,15 +369,15 @@ export default function RecommendationsPage() {
                         <div>
                           <h3 className="text-white font-bold text-sm">Azione rapida</h3>
                           <p className="text-gray-400 text-xs mt-0.5">
-                            {picks.filter((p) => p.slug).length} trade pronti su Polymarket — apri tutto con un click
+                            {picks.filter((p) => p.eventSlug || p.slug).length} trade pronti su Polymarket — apri tutto con un click
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {/* Open top 5 */}
                           <button
                             onClick={() => {
-                              picks.filter((p) => p.slug).slice(0, 5).forEach((p, i) => {
-                                setTimeout(() => window.open(`https://polymarket.com/event/${p.slug}`, `_pm_${i}`), i * 400);
+                              picks.filter((p) => p.eventSlug || p.slug).slice(0, 5).forEach((p, i) => {
+                                setTimeout(() => window.open(`https://polymarket.com/event/${p.eventSlug || p.slug}`, `_pm_${i}`), i * 400);
                               });
                             }}
                             className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-4 py-2 rounded-md transition-colors"
@@ -386,19 +387,19 @@ export default function RecommendationsPage() {
                           {/* Open ALL */}
                           <button
                             onClick={() => {
-                              picks.filter((p) => p.slug).forEach((p, i) => {
-                                setTimeout(() => window.open(`https://polymarket.com/event/${p.slug}`, `_pm_${i}`), i * 400);
+                              picks.filter((p) => p.eventSlug || p.slug).forEach((p, i) => {
+                                setTimeout(() => window.open(`https://polymarket.com/event/${p.eventSlug || p.slug}`, `_pm_${i}`), i * 400);
                               });
                             }}
                             className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium px-4 py-2 rounded-md transition-colors"
                           >
-                            Apri tutti ({picks.filter((p) => p.slug).length}) ↗
+                            Apri tutti ({picks.filter((p) => p.eventSlug || p.slug).length}) ↗
                           </button>
                           {/* Copy */}
                           <button
                             onClick={() => {
-                              const lines = picks.filter((p) => p.slug).map((p, i) =>
-                                `${i + 1}. ${p.question || "Mercato"}\n   Compra: ${p.outcomeName}\n   Entry: $${p.avgEntryPrice.toFixed(4)} → Se vince: +${p.potentialReturn.toFixed(0)}% | EV: ${p.expectedValue > 0 ? "+" : ""}${(p.expectedValue * 100).toFixed(1)}¢ | Size: ${p.suggestedSizePercent.toFixed(1)}%\n   ${p.walletCount} wallet (best αZ ${p.maxAlphaZ.toFixed(1)})\n   https://polymarket.com/event/${p.slug}\n`
+                              const lines = picks.filter((p) => p.eventSlug || p.slug).map((p, i) =>
+                                `${i + 1}. ${p.question || "Mercato"}\n   Compra: ${p.outcomeName}\n   Entry: $${p.avgEntryPrice.toFixed(4)} → Se vince: +${p.potentialReturn.toFixed(0)}% | EV: ${p.expectedValue > 0 ? "+" : ""}${(p.expectedValue * 100).toFixed(1)}¢ | Size: ${p.suggestedSizePercent.toFixed(1)}%\n   ${p.walletCount} wallet (best αZ ${p.maxAlphaZ.toFixed(1)})\n   https://polymarket.com/event/${p.eventSlug || p.slug}\n`
                               );
                               navigator.clipboard.writeText(lines.join("\n")).then(() => {
                                 setCopied(true);
@@ -445,9 +446,9 @@ export default function RecommendationsPage() {
                                 Compra <strong className="text-yellow-400">{p.outcomeName}</strong> — ultimo trade {timeAgo(p.latestTrade)}
                               </p>
                             </div>
-                            {p.slug && (
+                            {(p.eventSlug || p.slug) && (
                               <a
-                                href={`https://polymarket.com/event/${p.slug}`}
+                                href={`https://polymarket.com/event/${p.eventSlug || p.slug}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-4 py-2 rounded-md transition-colors"
@@ -523,8 +524,8 @@ export default function RecommendationsPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
-                              const lines = picks.filter((p) => p.slug).map((p, i) =>
-                                `${i + 1}. ${p.question}\n   Compra: ${p.outcomeName} (Outcome #${p.outcomeIndex})\n   Entry: $${p.avgEntryPrice.toFixed(4)} — Se vince: +${p.potentialReturn.toFixed(0)}% — EV: ${p.expectedValue > 0 ? "+" : ""}${(p.expectedValue * 100).toFixed(1)}¢\n   Fiducia: ${p.confidence} — ${p.walletCount} wallet — Size: ${p.suggestedSizePercent.toFixed(1)}% bankroll\n   Link: https://polymarket.com/event/${p.slug}\n`
+                              const lines = picks.filter((p) => p.eventSlug || p.slug).map((p, i) =>
+                                `${i + 1}. ${p.question}\n   Compra: ${p.outcomeName} (Outcome #${p.outcomeIndex})\n   Entry: $${p.avgEntryPrice.toFixed(4)} — Se vince: +${p.potentialReturn.toFixed(0)}% — EV: ${p.expectedValue > 0 ? "+" : ""}${(p.expectedValue * 100).toFixed(1)}¢\n   Fiducia: ${p.confidence} — ${p.walletCount} wallet — Size: ${p.suggestedSizePercent.toFixed(1)}% bankroll\n   Link: https://polymarket.com/event/${p.eventSlug || p.slug}\n`
                               );
                               navigator.clipboard.writeText(lines.join("\n")).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
                             }}
@@ -533,7 +534,7 @@ export default function RecommendationsPage() {
                             {copied ? "✓ Copiato!" : "Copia lista"}
                           </button>
                           <button
-                            onClick={() => { picks.filter((p) => p.slug).forEach((p, i) => { setTimeout(() => window.open(`https://polymarket.com/event/${p.slug}`, `_pm_${i}`), i * 300); }); }}
+                            onClick={() => { picks.filter((p) => p.eventSlug || p.slug).forEach((p, i) => { setTimeout(() => window.open(`https://polymarket.com/event/${p.eventSlug || p.slug}`, `_pm_${i}`), i * 300); }); }}
                             className="px-3 py-1.5 rounded-md text-xs font-medium bg-purple-600 hover:bg-purple-500 text-white transition-colors"
                           >
                             Apri tutti ↗
@@ -561,7 +562,7 @@ export default function RecommendationsPage() {
                                 <span className="text-gray-600">{p.walletCount} wallet</span>
                               </div>
                             </div>
-                            <a href={`https://polymarket.com/event/${p.slug}`} target="_blank" rel="noopener noreferrer"
+                            <a href={`https://polymarket.com/event/${p.eventSlug || p.slug}`} target="_blank" rel="noopener noreferrer"
                               className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-2 rounded-md">
                               Compra ↗
                             </a>
@@ -654,7 +655,7 @@ export default function RecommendationsPage() {
                           </div>
                           {e.slug && (
                             <a href={`https://polymarket.com/event/${e.slug}`} target="_blank" rel="noopener noreferrer"
-                              className="flex-shrink-0 bg-red-600/80 hover:bg-red-500 text-white text-xs font-medium px-3 py-1.5 rounded-md">
+                              className="flex-shrink-0 bg-red-600/80 hover:bg-red-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors">
                               Vedi mercato ↗
                             </a>
                           )}
