@@ -362,10 +362,60 @@ export default function RecommendationsPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="bg-blue-950/20 border border-blue-800/30 rounded-lg p-3 text-xs text-blue-300">
-                      <strong>Come funziona:</strong> Il sistema ha filtrato automaticamente i wallet con αZ&gt;0 a più soglie,
-                      hedge basso e late basso. Poi ha trovato le loro scommesse su mercati <strong>ancora aperti</strong>.
-                      Ogni pick mostra: fiducia, EV, size suggerita e link diretto per comprare.
+                    {/* ═══ QUICK ACTION BAR ═══ */}
+                    <div className="bg-gradient-to-r from-blue-950/30 to-purple-950/30 border border-blue-800/30 rounded-lg p-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-white font-bold text-sm">Azione rapida</h3>
+                          <p className="text-gray-400 text-xs mt-0.5">
+                            {picks.filter((p) => p.slug).length} trade pronti su Polymarket — apri tutto con un click
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {/* Open top 5 */}
+                          <button
+                            onClick={() => {
+                              picks.filter((p) => p.slug).slice(0, 5).forEach((p, i) => {
+                                setTimeout(() => window.open(`https://polymarket.com/event/${p.slug}`, `_pm_${i}`), i * 400);
+                              });
+                            }}
+                            className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-4 py-2 rounded-md transition-colors"
+                          >
+                            Apri top 5 ↗
+                          </button>
+                          {/* Open ALL */}
+                          <button
+                            onClick={() => {
+                              picks.filter((p) => p.slug).forEach((p, i) => {
+                                setTimeout(() => window.open(`https://polymarket.com/event/${p.slug}`, `_pm_${i}`), i * 400);
+                              });
+                            }}
+                            className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium px-4 py-2 rounded-md transition-colors"
+                          >
+                            Apri tutti ({picks.filter((p) => p.slug).length}) ↗
+                          </button>
+                          {/* Copy */}
+                          <button
+                            onClick={() => {
+                              const lines = picks.filter((p) => p.slug).map((p, i) =>
+                                `${i + 1}. ${p.question || "Mercato"}\n   Compra: ${p.outcomeName}\n   Entry: $${p.avgEntryPrice.toFixed(4)} → Se vince: +${p.potentialReturn.toFixed(0)}% | EV: ${p.expectedValue > 0 ? "+" : ""}${(p.expectedValue * 100).toFixed(1)}¢ | Size: ${p.suggestedSizePercent.toFixed(1)}%\n   ${p.walletCount} wallet (best αZ ${p.maxAlphaZ.toFixed(1)})\n   https://polymarket.com/event/${p.slug}\n`
+                              );
+                              navigator.clipboard.writeText(lines.join("\n")).then(() => {
+                                setCopied(true);
+                                setTimeout(() => setCopied(false), 3000);
+                              });
+                            }}
+                            className={`text-xs font-medium px-4 py-2 rounded-md transition-colors ${
+                              copied ? "bg-green-600 text-white" : "bg-gray-700 hover:bg-gray-600 text-white"
+                            }`}
+                          >
+                            {copied ? "✓ Copiato!" : "Copia lista"}
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-yellow-400/50 mt-2">
+                        Consenti i popup per questo sito. Ogni link apre il mercato su Polymarket — compra l&apos;outcome indicato in giallo sotto ogni pick.
+                      </p>
                     </div>
 
                     {picks.map((p, i) => {
